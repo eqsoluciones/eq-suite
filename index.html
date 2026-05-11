@@ -412,8 +412,8 @@ let ingresoTab   = "evento";
 let contabTab    = "cierre";  // cierre | leadtime
 let finTab       = "pagos";   // pagos | cobro
 
-const AREAS   = ["Gerencial","TICs","Contabilidad","Finanzas","Ventas","Abastecimiento","RRHH"];
-const ICONOS  = {TICs:"&#9881;&#65039;", Contabilidad:"&#128210;", Finanzas:"&#128176;", Ventas:"&#128200;", Abastecimiento:"&#128230;", RRHH:"&#128101;"};
+const AREAS   = ["Gerencial","TICs","Contabilidad","Finanzas","Abastecimiento","RRHH"];
+const ICONOS  = {TICs:"&#9881;&#65039;", Contabilidad:"&#128210;", Finanzas:"&#128176;", Abastecimiento:"&#128230;", RRHH:"&#128101;"};
 const MESES_N = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MESES_C = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
@@ -470,6 +470,7 @@ async function cargarDB(){
     try {
       cache.fin_cartera_semanal = await sbQuery("fin_cartera_semanal", {select:"*", order:"anio.desc,semana.desc", limit:500});
       cache.fin_cartera_detalle = await sbQuery("fin_cartera_detalle", {select:"*", order:"anio.desc,semana.desc,total_general.desc", limit:5000});
+      cache.empresa_api_config  = await sbQuery("empresa_api_config",  {select:"*"});
     } catch(e) {
       console.warn("fin_cartera no disponible (tablas no creadas aún):", e.message);
       cache.fin_cartera_semanal = [];
@@ -1034,7 +1035,7 @@ function renderNav(){
   AREAS.forEach(a=>{
     const btn = document.createElement("button");
     btn.className = "nav-btn"+(areaActual===a?" active":"");
-    btn.textContent = (a!=="Gerencial"?(a==="TICs"?"⚙ ":a==="Contabilidad"?"📒 ":a==="Finanzas"?"💰 ":a==="Ventas"?"📈 ":a==="Abastecimiento"?"📦 ":"👥 "):"")+ a;
+    btn.textContent = (a!=="Gerencial"?(a==="TICs"?"⚙ ":a==="Contabilidad"?"📒 ":a==="Finanzas"?"💰 ":a==="Abastecimiento"?"📦 ":"👥 "):"")+ a;
     btn.onclick = ()=>setArea(a);
     nav.appendChild(btn);
   });
@@ -1093,9 +1094,22 @@ function renderContent(){
     const finTabsDiv = document.getElementById("fin-tabs");
     const finBodyDiv = document.getElementById("fin-body");
     finTabsDiv.style.cssText = "display:flex;gap:8px;margin-bottom:16px";
-    [["pagos","\uD83D\uDCC6 FIN-IND-001 Pago Proveedores"],
-     ["cobro","\uD83D\uDCB3 FIN-IND-004 Efectividad de Cobro"]
-    ].forEach(function(pair){
+    (function(){
+      // Tabs base siempre visibles
+      const tabsBase = [
+        ["pagos","\uD83D\uDCC6 FIN-IND-001 Pago Proveedores"],
+        ["cobro","\uD83D\uDCB3 FIN-IND-004 Efectividad de Cobro"],
+      ];
+      // FIN-IND-005 solo si la empresa activa tiene config API en BD
+      const cache2 = window._sbCache||{};
+      const empActiva = (cache2.empresas||[]).find(e=>e.codigo===filtros.empresa);
+      const tieneApiConfig = (cache2.empresa_api_config||[]).some(
+        r=>r.id_empresa===empActiva?.id && r.activo
+      );
+      if(tieneApiConfig) tabsBase.push(["ventas","📈 FIN-IND-005 Ventas"]);
+      // Si finTab es ventas pero la empresa no tiene config, volver a pagos
+      if(finTab==="ventas" && !tieneApiConfig) finTab="pagos";
+      tabsBase.forEach(function(pair){
       var id=pair[0], label=pair[1];
       var btn=document.createElement("button");
       btn.className="nav-btn"+(finTab===id?" active":"");
@@ -1103,25 +1117,28 @@ function renderContent(){
       btn.addEventListener("click",(function(tabId){return function(){finTab=tabId;renderContent();};})(id));
       finTabsDiv.appendChild(btn);
     });
+    })(); // cierre IIFE tabs finanzas
     try {
-      finBodyDiv.innerHTML = finTab==="cobro" ? renderEfectividadCobro() : renderFinanzas();
+      finBodyDiv.innerHTML = finTab==="cobro" ? renderEfectividadCobro() : finTab==="ventas" ? "<div id='ven-container'></div>" : renderFinanzas();
     } catch(err) {
       finBodyDiv.innerHTML = "<div class='card' style='padding:32px;color:var(--rojo);font-family:monospace;font-size:12px'><b>Error en Finanzas "+finTab+":</b><br>"+err.message+"<br><pre style='white-space:pre-wrap;font-size:10px'>"+(err.stack||"").slice(0,500)+"</pre></div>";
     }
     setTimeout(function(){
       if(finTab==="cobro") initChartsEfectividad();
+      else if(finTab==="ventas"){
+      setTimeout(async function(){
+        await venCargarConfig();   // carga config desde Supabase para empresa activa
+        renderVentasContifico();   // renderiza shell
+        venCargarDesdeBD();        // carga datos desde BD (instantáneo)
+      },80);
+    }
       else initChartsFinanzas();
     },80);
-  }
-  else if(areaActual==="Ventas"){
-    el.innerHTML = "<div id='ven-container'></div>";
-    renderVentasContifico();
-    return;
   }
   else                             el.innerHTML = renderArea(areaActual);
 
   if(areaActual==="Gerencial")     initBarChart();
-  else if(!["Admin","Datos","Finanzas","Ventas"].includes(areaActual)) initChartsKPI(areaActual);
+  else if(!["Admin","Datos","Finanzas"].includes(areaActual)) initChartsKPI(areaActual);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3261,7 +3278,7 @@ function venCrearModal(){
   div.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center";
   div.innerHTML = '<div style="background:var(--bg,#F5F7FA);border-radius:12px;padding:28px 32px;width:480px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.3)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
-    '<div style="font-family:Raleway,sans-serif;font-weight:800;font-size:15px;color:var(--azul)">⚙ Configuración API Contifico</div>' +
+    '<div id="ven-cfg-titulo" style="font-family:Raleway,sans-serif;font-weight:800;font-size:15px;color:var(--azul)">⚙ Configuración API Contifico</div>' +
     '<button onclick="venCerrarConfig()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--grisMed)">✕</button></div>' +
     '<div style="font-size:11px;color:var(--grisMed);margin-bottom:16px;line-height:1.6">Ingresa tus credenciales de Contifico. Se guardan localmente en el navegador.</div>' +
     '<div class="form-group"><label class="form-label">API_KEY</label><input type="password" id="ven-cfg-apikey" class="form-input" placeholder="Tu API_KEY de Contifico (opcional si usas proxy)"/></div>' +
@@ -3270,7 +3287,7 @@ function venCrearModal(){
     '<input type="text" id="ven-cfg-proxy" class="form-input" placeholder="https://hiyviwfdvhsbyftrzpoz.supabase.co/functions/v1/contifico-proxy"/>' +
     '<div style="font-size:10px;color:var(--grisMed);margin-top:3px">Recomendado — evita problemas de CORS</div></div>' +
     '<div id="ven-cfg-result" style="display:none;padding:10px;border-radius:8px;font-size:12px;margin-bottom:14px"></div>' +
-    '<button class="submit-btn" onclick="venProbarConfig()" style="width:100%;margin-bottom:8px">💾 Guardar y Probar</button>' +
+    '<button id="ven-btn-guardar-cfg" class="submit-btn" onclick="venProbarConfig()" style="width:100%;margin-bottom:8px">💾 Guardar y Probar conexión</button>' +
     '<button onclick="venCerrarConfig()" class="submit-btn" style="width:100%;background:var(--grisMed)">Cancelar</button>' +
     '</div>';
   document.body.appendChild(div);
@@ -3283,10 +3300,10 @@ window.venCrearModal = venCrearModal;
 
 
 // ═══════════════════════════════════════════════════════════════
-// VEN-IND-001 — VENTAS CONTIFICO (SUPERHEALTHY S.A.S.)
+// FIN-IND-005 — VENTAS CONTIFICO (SUPERHEALTHY S.A.S.)
 // ═══════════════════════════════════════════════════════════════
 // Estado del módulo de ventas
-let _venCFG   = JSON.parse(localStorage.getItem("sh_contifico_cfg")||"{}");
+// _venCFG se inicializa más abajo con valores vacíos (se carga desde Supabase)
 window._venVentas  = window._venVentas  || [];
 window._venDetalle = window._venDetalle || [];
 window._venCharts  = window._venCharts  || {};
@@ -3295,36 +3312,38 @@ function renderVentasContifico(){
   const el = document.getElementById("ven-container");
   if(!el) return;
 
-  // Calcular KPIs desde datos en memoria
+  // ── Fechas: por defecto ayer (carga rápida desde BD) ─────────
+  const hoyV = new Date();
+  const ayerV = new Date(hoyV); ayerV.setDate(ayerV.getDate()-1);
+  const fmtD = d=>d.toISOString().slice(0,10);
+  const stored = JSON.parse(sessionStorage.getItem("ven_fechas")||"{}");
+  const fIni = stored.ini || fmtD(ayerV);
+  const fFin = stored.fin || fmtD(hoyV);
+
+  // ── KPIs desde memoria ─────────────────────────────────────────
   const totalVentas = window._venVentas.reduce((s,d)=>s+d.total,0);
   const nFacturas   = window._venVentas.length;
   const ticket      = nFacturas>0?totalVentas/nFacturas:0;
   const prods       = new Set(window._venDetalle.map(d=>d.producto_id)).size;
   const fmtM = v=>"$"+parseFloat(v||0).toLocaleString("es-EC",{minimumFractionDigits:2,maximumFractionDigits:2});
 
-  // Fechas por defecto: mes actual
-  const hoyV = new Date();
-  const iniV = new Date(hoyV.getFullYear(),hoyV.getMonth(),1);
-  const fmtD = d=>d.toISOString().slice(0,10);
-  const stored = JSON.parse(sessionStorage.getItem("ven_fechas")||"{}");
-  const fIni = stored.ini || fmtD(iniV);
-  const fFin = stored.fin || fmtD(hoyV);
-
-  const cfgOk = _ven_venCFG.proxy || _ven_venCFG.apikey;
-  const statusDot  = cfgOk?"ok":"err";
-  const statusText = cfgOk?"Proxy configurado · listo para sincronizar":"Sin configurar · haz clic en ⚙ Configurar API";
+  const cfgOk = _venCFG.proxy || _venCFG.apikey;
+  const statusDot  = window._venCargando?"wait":nFacturas>0?"ok":cfgOk?"ok":"err";
+  const statusText = window._venCargando?"Cargando datos...":
+                     nFacturas>0?`${nFacturas} facturas · ${fIni} al ${fFin}`:
+                     cfgOk?"Listo · presiona Sincronizar para actualizar":"Sin configurar · haz clic en ⚙ Configurar API";
 
   let html = `
   <div class="ven-header">
     <div class="ven-brand">
       <div class="ven-logo">🥗</div>
       <div>
-        <div class="ven-title">Dashboard de Ventas</div>
-        <div class="ven-sub">VEN-IND-001 · Contifico</div>
+        <div class="ven-title">Ventas — FIN-IND-005</div>
+        <div class="ven-sub">FIN-IND-005 · Ventas Contifico</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <div class="ven-badge">SUPERHEALTHY S.A.S.</div>
+      <div class="ven-badge">${(window._sbCache?.empresas||[]).find(e=>e.codigo===filtros.empresa)?.nombre||"SUPERHEALTHY S.A.S."}</div>
       <button class="ven-config-btn" onclick="venAbrirConfig()">⚙ Configurar API</button>
     </div>
   </div>
@@ -3334,8 +3353,14 @@ function renderVentasContifico(){
     <input type="date" id="ven-f-ini" class="form-input" style="width:140px;font-size:12px" value="${fIni}">
     <span style="font-size:11px;color:var(--grisMed)">al</span>
     <input type="date" id="ven-f-fin" class="form-input" style="width:140px;font-size:12px" value="${fFin}">
-    <button class="ven-sync-btn" id="ven-btn-sync" onclick="venSincronizar()">
-      <span id="ven-sync-icon">🔄</span> Sincronizar Contifico
+    <button class="ven-sync-btn" id="ven-btn-bd" onclick="venCargarDesdeBD()" style="background:var(--azul)"
+      title="Carga desde Supabase (datos ya sincronizados, instantáneo)">
+      📂 Cargar
+    </button>
+    <button class="ven-sync-btn" id="ven-btn-sync" onclick="venSincronizar()"
+      style="background:rgba(0,180,170,0.15);color:var(--tq);border:1px solid var(--tq)"
+      title="Consulta Contifico en tiempo real (puede tardar)">
+      <span id="ven-sync-icon">🔄</span> Actualizar desde Contifico
     </button>
     <div class="ven-status">
       <span class="ven-sdot ${statusDot}" id="ven-sdot"></span>
@@ -3344,13 +3369,29 @@ function renderVentasContifico(){
   </div>`;
 
   if(!nFacturas){
-    html += `<div class="ven-card ven-empty">
-      <div style="font-size:36px;margin-bottom:10px">📊</div>
-      <div style="font-weight:700;color:var(--azul);font-size:15px;margin-bottom:6px">Sin datos de ventas</div>
-      <div>Configura el API de Contifico y sincroniza para ver el dashboard.</div>
+    const cargandoHtml = window._venCargando
+      ? `<div style="font-size:13px;color:var(--grisMed)"><span style="display:inline-block;animation:spin .6s linear infinite;margin-right:8px">⏳</span>Cargando datos de ventas...</div>`
+      : `<div style="font-size:12px;color:var(--grisMed);margin-bottom:20px;line-height:1.6">
+          ${cfgOk
+            ? "Presiona <b>📂 Cargar</b> para ver datos guardados, o <b>🔄 Actualizar desde Contifico</b> para obtener datos en tiempo real."
+            : "Configura el Proxy URL de Supabase para conectarte a Contifico."}
+        </div>
+        <div style='display:flex;gap:10px;justify-content:center;flex-wrap:wrap'>
+          ${cfgOk
+            ? `<button class='submit-btn' onclick='venCargarDesdeBD()' style='background:var(--azul)'>📂 Cargar datos guardados</button>
+               <button class='submit-btn' onclick='venSincronizar()' style='background:rgba(0,180,170,0.15);color:var(--tq);border:1px solid var(--tq)'>🔄 Actualizar desde Contifico</button>`
+            : `<button class='submit-btn' onclick='venAbrirConfig()'>⚙ Configurar API</button>`}
+        </div>`;
+
+    html += `<div class="ven-card" style="padding:40px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">📈</div>
+      <div style="font-weight:800;color:var(--azul);font-size:16px;font-family:Raleway,sans-serif;margin-bottom:12px">FIN-IND-005 — Ventas SUPERHEALTHY</div>
+      ${cargandoHtml}
     </div>`;
     el.innerHTML = html;
     venCrearModal();
+    // Auto-cargar desde BD al abrir por primera vez
+    if(!window._venCargando && cfgOk) venCargarDesdeBD();
     return;
   }
 
@@ -3446,60 +3487,142 @@ window.renderVentasContifico = renderVentasContifico;
 
 
 // ═══════════════════════════════════════════════════════════════
-// SUPABASE — mismo proyecto que el dashboard principal
+// CONFIG API — Multiempresa, guardada en Supabase (tabla empresa_api_config)
+// Cada empresa tiene su propio proxy_url / api_key / tipo_erp
+// Solo eq_admin y eq_lider pueden configurar
 // ═══════════════════════════════════════════════════════════════
 
+// Cache de config en memoria (se carga desde Supabase al abrir el tab)
+let _venCFG = { apikey:"", token:"", proxy:"", id_empresa:null };
 
-// ═══════════════════════════════════════════════════════════════
-// CONFIG — API_KEY se guarda en localStorage (nunca en código)
-// ═══════════════════════════════════════════════════════════════
-let _venCFG2 = { apikey:"", token:"", proxy:"" };
+async function venCargarConfig(){
+  // Obtener empresa activa del filtro global
+  const cache = window._sbCache||{};
+  const empObj = (cache.empresas||[]).find(e=>e.codigo===filtros.empresa);
+  if(!empObj) return;
 
-function venCargarConfig(){
+  // Buscar config en Supabase para esta empresa
   try {
-    const s = localStorage.getItem("sh_contifico_cfg");
-    if(s) _venCFG = JSON.parse(s);
-  } catch(e) {}
-}
-function venGuardarConfig(){
-  localStorage.setItem("sh_contifico_cfg", JSON.stringify(CFG));
-}
-function venAbrirConfig(){
-  document.getElementById("ven-cfg-apikey").value = _venCFG.apikey||"";
-  document.getElementById("ven-cfg-token").value  = _venCFG.token||"";
-  document.getElementById("ven-cfg-proxy").value  = _venCFG.proxy||"";
-  document.getElementById("ven-cfg-result").style.display = "none";
-  document.getElementById("ven-modal-cfg").style.display = "flex";
-}
-function venCerrarConfig(){
-  document.getElementById("ven-modal-cfg").style.display = "none";
-}
-async function venProbarConfig(){
-  const apikey = document.getElementById("ven-cfg-apikey").value.trim();
-  const token  = document.getElementById("ven-cfg-token").value.trim();
-  const proxy  = document.getElementById("ven-cfg-proxy").value.trim();
-
-  // Con proxy configurado, el API_KEY es opcional (el secreto está en Supabase)
-  if(!apikey && !proxy){ venShowToast("Ingresa el API_KEY o configura el Proxy URL", "err"); return; }
-
-  // Si hay proxy pero no API_KEY, usar un placeholder para pasar la validación local
-  _venCFG = { apikey: apikey || "via-proxy", token, proxy };
-  const resEl = document.getElementById("ven-cfg-result");
-  resEl.style.display = "block";
-  resEl.style.background = "#FFF8E1";
-  resEl.textContent = "⏳ Probando conexión con Contifico...";
-
-  try {
-    // Probar con una consulta sin filtro de fecha (solo 1 resultado)
-    const docs = await contificoGET("registro/documento/?tipo_registro=CLI&tipo=FAC&result_size=1&result_page=1");
-    venGuardarConfig();
-    resEl.style.background = "#E8F5E9";
-    resEl.textContent = "✅ Conexión exitosa. " + (Array.isArray(docs) ? docs.length+" documento(s) encontrado(s)." : "Credenciales válidas.");
-    venActualizarStatus("ok", "Conectado · listo para sincronizar");
+    const rows = await sbQuery("empresa_api_config",
+      `id_empresa=eq.${empObj.id}&tipo_erp=eq.contifico&activo=eq.true&limit=1`);
+    if(Array.isArray(rows) && rows.length>0){
+      const r = rows[0];
+      _venCFG = {
+        apikey:     r.api_key   || "",
+        token:      r.token_pos || "",
+        proxy:      r.proxy_url || "",
+        id_empresa: empObj.id,
+      };
+    } else {
+      _venCFG = { apikey:"", token:"", proxy:"", id_empresa:empObj.id };
+    }
   } catch(e) {
-    resEl.style.background = "#FFEBEE";
-    resEl.textContent = "❌ Error: "+e.message+". Verifica el API_KEY y Token.";
-    venActualizarStatus("err", "Error de conexión");
+    console.warn("venCargarConfig:", e.message);
+    _venCFG = { apikey:"", token:"", proxy:"", id_empresa:empObj.id };
+  }
+}
+
+async function venGuardarConfig(apikey, token, proxy){
+  const cache = window._sbCache||{};
+  const empObj = (cache.empresas||[]).find(e=>e.codigo===filtros.empresa);
+  if(!empObj){ venShowToast("No se pudo identificar la empresa activa","err"); return false; }
+
+  const payload = {
+    id_empresa: empObj.id,
+    tipo_erp:   "contifico",
+    proxy_url:  proxy  || null,
+    api_key:    apikey || null,
+    token_pos:  token  || null,
+    activo:     true,
+    creado_por: sesion?.email || "admin",
+    actualizado_en: new Date().toISOString(),
+  };
+
+  try {
+    // Upsert: si ya existe config para esta empresa la actualiza, si no la crea
+    const existing = await sbQuery("empresa_api_config",
+      `id_empresa=eq.${empObj.id}&tipo_erp=eq.contifico&limit=1`);
+    if(Array.isArray(existing) && existing.length>0){
+      await sbUpdate("empresa_api_config", payload, "id_empresa,tipo_erp",
+        `id_empresa=eq.${empObj.id}&tipo_erp=eq.contifico`);
+    } else {
+      await sbInsert("empresa_api_config", payload);
+    }
+    _venCFG = { apikey: apikey||"via-proxy", token, proxy, id_empresa: empObj.id };
+    return true;
+  } catch(e) {
+    console.error("venGuardarConfig:", e);
+    throw e;
+  }
+}
+
+function venAbrirConfig(){
+  venCrearModal();
+  const cache = window._sbCache||{};
+  const empObj = (cache.empresas||[]).find(e=>e.codigo===filtros.empresa);
+  const empNombre = empObj?.nombre || filtros.empresa;
+  const puedeConfig = sesion?.rol==="eq_admin" || sesion?.rol==="eq_lider";
+
+  const m = document.getElementById("ven-modal-cfg");
+  if(!m) return;
+
+  // Actualizar título con empresa activa
+  const titulo = m.querySelector("#ven-cfg-titulo");
+  if(titulo) titulo.textContent = `⚙ Config API — ${empNombre}`;
+
+  // Solo admins pueden editar
+  const inputs = m.querySelectorAll("input");
+  inputs.forEach(i=>i.disabled=!puedeConfig);
+  const btnGuardar = m.querySelector("#ven-btn-guardar-cfg");
+  if(btnGuardar) btnGuardar.style.display = puedeConfig?"block":"none";
+
+  // Rellenar con valores actuales
+  const apikeyEl = document.getElementById("ven-cfg-apikey");
+  const tokenEl  = document.getElementById("ven-cfg-token");
+  const proxyEl  = document.getElementById("ven-cfg-proxy");
+  if(apikeyEl) apikeyEl.value = (_venCFG.apikey==="via-proxy"?"":_venCFG.apikey)||"";
+  if(tokenEl)  tokenEl.value  = _venCFG.token||"";
+  if(proxyEl)  proxyEl.value  = _venCFG.proxy||"";
+
+  const resEl = document.getElementById("ven-cfg-result");
+  if(resEl) resEl.style.display="none";
+  m.style.display = "flex";
+}
+
+function venCerrarConfig(){
+  const m = document.getElementById("ven-modal-cfg");
+  if(m) m.style.display = "none";
+}
+
+async function venProbarConfig(){
+  const apikey = document.getElementById("ven-cfg-apikey")?.value.trim()||"";
+  const token  = document.getElementById("ven-cfg-token")?.value.trim()||"";
+  const proxy  = document.getElementById("ven-cfg-proxy")?.value.trim()||"";
+
+  if(!apikey && !proxy){
+    venShowToast("Ingresa el Proxy URL (recomendado) o el API_KEY","err");
+    return;
+  }
+
+  const resEl = document.getElementById("ven-cfg-result");
+  if(resEl){ resEl.style.display="block"; resEl.style.background="#FFF8E1"; resEl.textContent="⏳ Probando conexión..."; }
+
+  // Guardar temporalmente para poder probar
+  const cfgTemp = { apikey: apikey||"via-proxy", token, proxy };
+  const cfgOrig = {..._venCFG};
+  _venCFG = cfgTemp;
+
+  try {
+    const docs = await venContificoGET("registro/documento/?tipo_registro=CLI&tipo=FAC&result_size=1&result_page=1");
+    // Prueba OK — guardar en Supabase
+    await venGuardarConfig(apikey, token, proxy);
+    if(resEl){ resEl.style.background="#E8F5E9"; resEl.textContent="✅ Conexión exitosa · configuración guardada para "+((window._sbCache?.empresas||[]).find(e=>e.codigo===filtros.empresa)?.nombre||filtros.empresa); }
+    venActualizarStatus("ok","Conectado · listo para sincronizar");
+    venShowToast("✅ API configurada y guardada","ok");
+  } catch(e) {
+    _venCFG = cfgOrig; // revertir si falla
+    if(resEl){ resEl.style.background="#FFEBEE"; resEl.textContent="❌ Error: "+e.message; }
+    venActualizarStatus("err","Error de conexión");
   }
 }
 
@@ -3508,7 +3631,7 @@ async function venProbarConfig(){
 // La API de Contifico no permite CORS desde el browser directamente.
 // Si hay proxy configurado lo usa; si no, intenta directo.
 // ═══════════════════════════════════════════════════════════════
-async function contificoGET(endpoint, params={}){
+async function venContificoGET(endpoint, params={}){
   if(!_venCFG.apikey && !_venCFG.proxy) throw new Error("API_KEY no configurado. Haz clic en ⚙ Configurar API.");
 
   // Si hay proxy (Edge Function de Supabase), úsalo — el API_KEY está guardado como secreto en Supabase
@@ -3551,16 +3674,18 @@ window._venCharts = window._venCharts || {};  // referencias Chart.js
 // en Supabase (ven_documento + venwindow._venDetalle) y en memoria
 // ═══════════════════════════════════════════════════════════════
 async function venSincronizar(){
-  if(!_venCFG.apikey){ abrirConfig(); return; }
+  if(!_venCFG.proxy && !_venCFG.apikey){ venAbrirConfig(); return; }
 
   const inicio = document.getElementById("ven-f-ini").value;
   const fin    = document.getElementById("ven-f-fin").value;
   if(!inicio||!fin){ venShowToast("Selecciona rango de fechas", "err"); return; }
 
-  const btn = document.getElementById("ven-btn-sync");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Sincronizando...';
-  venActualizarStatus("wait", "Consultando Contifico...");
+  const btn   = document.getElementById("ven-btn-sync");
+  const btnBd = document.getElementById("ven-btn-bd");
+  if(btn)  { btn.disabled=true;  btn.innerHTML='⏳ Consultando Contifico...'; }
+  if(btnBd){ btnBd.disabled=true; }
+  window._venCargando = true;
+  venActualizarStatus("wait", "Consultando Contifico en tiempo real...");
 
   try {
     // 1. Obtener facturas página por página
@@ -3571,7 +3696,7 @@ async function venSincronizar(){
     while(true){
       venActualizarStatus("wait", `Descargando página ${page}...`);
       const qs = `tipo_registro=CLI&tipo=FAC&fecha_inicial=${formatFechaApi(inicio)}&fecha_final=${formatFechaApi(fin)}&result_size=${PAGE_SIZE}&result_page=${page}`;
-      const docs = await contificoGET("registro/documento/?"+qs);
+      const docs = await venContificoGET("registro/documento/?"+qs);
       if(!Array.isArray(docs)||docs.length===0) break;
       allDocs = allDocs.concat(docs);
       if(docs.length < PAGE_SIZE) break;
@@ -3623,8 +3748,8 @@ async function venSincronizar(){
 
     // 3. Guardar en Supabase (opcional — para histórico)
     await venGuardarEnSupabase(inicio, fin);
-
-    // 4. Renderizar dashboard
+    // 4. Guardar en BD y renderizar
+    await venGuardarEnSupabase(inicio, fin);
     venRenderDashboard();
     venActualizarStatus("ok", `${window._venVentas.length} facturas · ${formatFechaApi(inicio)} – ${formatFechaApi(fin)}`);
     venShowToast(`✅ Sincronizado: ${window._venVentas.length} facturas · ${window._venDetalle.length} líneas`, "ok");
@@ -3634,24 +3759,101 @@ async function venSincronizar(){
     venShowToast("❌ "+e.message, "err");
     venActualizarStatus("err", "Error: "+e.message.slice(0,50));
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span>🔄</span> Sincronizar Contifico';
+    if(btn)  { btn.disabled=false; btn.innerHTML='🔄 Actualizar desde Contifico'; }
+    if(btnBd){ btnBd.disabled=false; }
+    window._venCargando=false;
   }
 }
 
-async function venGuardarEnSupabase(inicio, fin){
+
+// ── Carga desde Supabase (instantáneo, usa datos ya sincronizados) ────────
+async function venCargarDesdeBD(){
+  const inicio = document.getElementById("ven-f-ini")?.value;
+  const fin    = document.getElementById("ven-f-fin")?.value;
+  if(!inicio||!fin){ venShowToast("Selecciona rango de fechas","err"); return; }
+
+  // Guardar fechas en sessionStorage para persistir entre navegaciones
+  sessionStorage.setItem("ven_fechas", JSON.stringify({ini:inicio,fin:fin}));
+
+  const btnBd  = document.getElementById("ven-btn-bd");
+  const btnSync= document.getElementById("ven-btn-sync");
+  if(btnBd)  { btnBd.disabled=true; btnBd.textContent="⏳ Cargando..."; }
+  if(btnSync){ btnSync.disabled=true; }
+  window._venCargando = true;
+  venActualizarStatus("wait", "Leyendo Supabase...");
+
   try {
-    // Borrar datos anteriores del mismo período
-    await sbDelete("ven_documento", `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}`);
-    // Insertar en lotes de 100
-    for(let i=0;i<window._venVentas.length;i+=100){
-      await sbInsert("ven_documento", window._venVentas.slice(i,i+100));
+    // Consultar ven_documento desde Supabase
+    const qs = `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}&order=fecha_emision.asc&limit=5000`;
+    const docs = await sbQuery("ven_documento", qs);
+    const dets = await sbQuery("ven_detalle",
+      `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}&limit=20000`);
+
+    window._venVentas  = Array.isArray(docs) ? docs : [];
+    window._venDetalle = Array.isArray(dets) ? dets : [];
+
+    if(window._venVentas.length===0){
+      venActualizarStatus("wait", "Sin datos en BD · sincroniza desde Contifico");
+      venShowToast("Sin datos en Supabase para este período. Prueba sincronizar desde Contifico.", "err");
+    } else {
+      venActualizarStatus("ok",
+        `${window._venVentas.length} facturas · ${window._venDetalle.length} líneas · desde Supabase`);
+      venShowToast(`✅ ${window._venVentas.length} facturas cargadas`, "ok");
     }
-    for(let i=0;i<window._venDetalle.length;i+=100){
-      await sbInsert("venwindow._venDetalle", window._venDetalle.slice(i,i+100));
+
+    // Refrescar la vista con los datos cargados
+    renderVentasContifico();
+
+  } catch(e) {
+    console.error("venCargarDesdeBD error:", e);
+    venShowToast("Error al leer Supabase: "+e.message, "err");
+    venActualizarStatus("err", "Error: "+e.message.slice(0,50));
+    window._venCargando = false;
+    renderVentasContifico();
+  } finally {
+    window._venCargando = false;
+    if(btnBd)  { btnBd.disabled=false; btnBd.textContent="📂 Cargar"; }
+    if(btnSync){ btnSync.disabled=false; }
+  }
+}
+window.venCargarDesdeBD = venCargarDesdeBD;
+
+async function venGuardarEnSupabase(inicio, fin){
+  // Estrategia: upsert por id_externo — no duplica aunque sincronices varias veces
+  // 1. Leer los id_externo ya existentes en BD para el período
+  // 2. Solo insertar los documentos nuevos (que no están en BD)
+  // 3. El detalle se sincroniza igual: solo filas nuevas por id_documento
+  try {
+    // Obtener ids ya en BD para este período
+    const existing = await sbQuery("ven_documento",
+      `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}&select=id_externo`);
+    const idsEnBD = new Set((Array.isArray(existing)?existing:[]).map(r=>r.id_externo));
+
+    // Filtrar solo los documentos nuevos (que Contifico devolvió pero BD no tiene)
+    const nuevosVentas = window._venVentas.filter(v=>!idsEnBD.has(v.id_externo));
+
+    if(nuevosVentas.length > 0){
+      // Insertar solo los documentos nuevos en lotes de 100
+      for(let i=0;i<nuevosVentas.length;i+=100){
+        await sbInsert("ven_documento", nuevosVentas.slice(i,i+100));
+      }
+      console.log(`BD: ${nuevosVentas.length} docs nuevos insertados, ${idsEnBD.size} ya existían`);
+
+      // Insertar el detalle solo de los docs nuevos
+      const idsNuevos = new Set(nuevosVentas.map(v=>v.id_externo));
+      const nuevosDetalle = window._venDetalle.filter(d=>idsNuevos.has(d.id_documento));
+      for(let i=0;i<nuevosDetalle.length;i+=100){
+        await sbInsert("ven_detalle", nuevosDetalle.slice(i,i+100));
+      }
+      venShowToast(
+        `💾 ${nuevosVentas.length} docs nuevos guardados · ${idsEnBD.size} ya existían en BD`,
+        "ok"
+      );
+    } else {
+      console.log("BD: todos los documentos ya existen, nada que insertar");
+      venShowToast(`✅ Todos los documentos ya estaban en BD (${idsEnBD.size} existentes)`, "ok");
     }
   } catch(e) {
-    // Las tablas pueden no existir aún — no interrumpe el dashboard
     console.warn("Supabase save warning:", e.message);
   }
 }

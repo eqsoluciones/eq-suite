@@ -244,6 +244,16 @@
 .ven-sync-btn { background:#00B4AA;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Open Sans',sans-serif; }
 .ven-sync-btn:hover { background:#007A72; }
 .ven-sync-btn:disabled { background:var(--grisMed);cursor:not-allowed; }
+.ven-progress-wrap { width:100%;height:6px;background:var(--grisLight);border-radius:3px;overflow:hidden;margin-top:6px; }
+.ven-progress-bar  { height:6px;border-radius:3px;background:var(--tq);width:0%;transition:width .4s ease; }
+.ven-progress-bar.indeterminate { animation:ven-slide 1.4s ease-in-out infinite; width:40% !important; }
+@keyframes ven-slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
+.ven-loading-overlay { display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:48px;text-align:center; }
+.ven-spinner-ring { width:48px;height:48px;border:4px solid var(--grisLight);
+  border-top-color:var(--tq);border-radius:50%;animation:spin .8s linear infinite; }
+.ven-loading-msg { font-size:13px;color:var(--azul);font-weight:600; }
+.ven-loading-sub  { font-size:11px;color:var(--grisMed); }
 .ven-status { font-size:11px;color:var(--grisMed); }
 .ven-sdot   { width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px; }
 .ven-sdot.ok   { background:var(--verde); }
@@ -282,7 +292,7 @@
 @media(max-width:900px){.ven-kpi-grid{grid-template-columns:1fr 1fr}.ven-charts-wide,.ven-charts-2{grid-template-columns:1fr}}
 @media(max-width:600px){.ven-kpi-grid{grid-template-columns:1fr}}
 
-</style></head><body><div id="loading-screen"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="44" alt="EQ"/><div class="loading-bar"><div class="loading-fill"></div></div><div class="loading-text" id="loading-text">Iniciando...</div></div><div id="login-screen" class="hidden"><div class="login-card"><div class="login-logo"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="44" alt="EQSolutions"/></div><div class="login-divider"></div><div class="login-title">Acceso al Dashboard</div><div class="login-sub">Ingresa tus credenciales para continuar</div><div class="login-error" id="login-error"></div><div class="form-group"><label class="form-label">Correo electr&oacute;nico</label><input type="email" id="login-email" class="form-input" placeholder="usuario@empresa.com"/></div><div class="form-group"><label class="form-label">Contrase&ntilde;a</label><div class="pw-wrap"><input type="password" id="login-pwd" class="form-input" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"/><button class="pw-toggle" id="pw-eye" onclick="togglePwd()">&#128065;</button></div></div><button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar</button><div class="login-footer">EQSolutions &copy; 2025 &middot; Acceso restringido<br><span style="color:var(--tq)">EQ Intelligence Platform</span></div></div></div><div id="header" class="hidden"><div id="header-top"><div class="logo-wrap"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="40" alt="EQ"/><div class="header-sep"></div><div style="font-size:9px;color:var(--grisMed);text-transform:uppercase;letter-spacing:.18em">Dashboard Ejecutivo</div></div><div style="display:flex;align-items:center;gap:10px"><div id="filtros-globales" class="filtros-globales hidden"><div class="empresa-dot"></div><span class="filtro-label">Empresa:</span><select id="f-empresa" class="filtro-select" onchange="onFiltroChange()"></select><div class="filtro-sep">|</div><span class="filtro-label">A&ntilde;o:</span><select id="f-anio" class="filtro-select" onchange="onFiltroChange()"></select><div class="filtro-sep">|</div><span class="filtro-label">Mes:</span><select id="f-mes" class="filtro-select" onchange="onFiltroChange()"></select></div><div id="user-badge-wrap"></div></div></div><div id="nav"></div></div><div id="banner-error" class="banner banner-error hidden"><span id="error-text"></span><button onclick="hideError()">&#x2715;</button></div><div id="banner-success" class="banner banner-success hidden"><span id="success-text"></span></div><div id="content" class="hidden"></div><div id="footer" class="hidden"><div style="display:flex;align-items:center;gap:10px"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="18" alt="EQ"/><span style="font-size:10px;color:var(--grisMed)">&copy; 2025 EQSolutions</span></div><span style="font-size:10px;color:var(--tq);font-weight:700;text-transform:uppercase;letter-spacing:.1em" id="footer-right"></span></div><div id="modal-overlay" class="hidden"></div><script>
+</style></head><body><div id="loading-screen"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="44" alt="EQ"/><div class="loading-bar"><div class="loading-fill"></div></div><div class="loading-text" id="loading-text">Iniciando...</div></div><div id="login-screen" class="hidden"><div class="login-card"><div class="login-logo"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="44" alt="EQSolutions"/></div><div class="login-divider"></div><div class="login-title">Acceso al Dashboard</div><div class="login-sub">Ingresa tus credenciales para continuar</div><div class="login-error" id="login-error"></div><div class="form-group"><label class="form-label">Correo electr&oacute;nico</label><input type="email" id="login-email" class="form-input" placeholder="usuario@empresa.com"/></div><div class="form-group"><label class="form-label">Contrase&ntilde;a</label><div class="pw-wrap"><input type="password" id="login-pwd" class="form-input" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"/><button class="pw-toggle" id="pw-eye" onclick="togglePwd()">&#128065;</button></div></div><button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar</button><div class="login-footer">EQSolutions &copy; 2026 &middot; Acceso restringido<br><span style="color:var(--tq)">EQ Intelligence Platform</span></div></div></div><div id="header" class="hidden"><div id="header-top"><div class="logo-wrap"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="40" alt="EQ"/><div class="header-sep"></div><div style="font-size:9px;color:var(--grisMed);text-transform:uppercase;letter-spacing:.18em">Dashboard Ejecutivo</div></div><div style="display:flex;align-items:center;gap:10px"><div id="filtros-globales" class="filtros-globales hidden"><div class="empresa-dot"></div><span class="filtro-label">Empresa:</span><select id="f-empresa" class="filtro-select" onchange="onFiltroChange()"></select><div class="filtro-sep">|</div><span class="filtro-label">A&ntilde;o:</span><select id="f-anio" class="filtro-select" onchange="onFiltroChange()"></select><div class="filtro-sep">|</div><span class="filtro-label">Mes:</span><select id="f-mes" class="filtro-select" onchange="onFiltroChange()"></select></div><div id="user-badge-wrap"></div></div></div><div id="nav"></div></div><div id="banner-error" class="banner banner-error hidden"><span id="error-text"></span><button onclick="hideError()">&#x2715;</button></div><div id="banner-success" class="banner banner-success hidden"><span id="success-text"></span></div><div id="content" class="hidden"></div><div id="footer" class="hidden"><div style="display:flex;align-items:center;gap:10px"><img src="Manual%20de%20marca/Logo%20EQ%20Horizontal-Color.png" height="18" alt="EQ"/><span style="font-size:10px;color:var(--grisMed)">&copy; 2026 EQSolutions</span></div><span style="font-size:10px;color:var(--tq);font-weight:700;text-transform:uppercase;letter-spacing:.1em" id="footer-right"></span></div><div id="modal-overlay" class="hidden"></div><script>
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURACIÓN SUPABASE
 // Reemplazar con tus credenciales después de crear el proyecto
@@ -292,16 +302,23 @@ const SUPA_KEY = "sb_publishable_hyjGSRUZmNdTsoN6nYzhsA_fXZ08y08";
 
 // Función central de consulta a Supabase REST API
 async function sbQuery(table, params){
-  // params: {select, eq, order, limit}
-  let url = SUPA_URL+"/rest/v1/"+table+"?";
-  if(params.select) url += "select="+encodeURIComponent(params.select)+"&";
-  if(params.eq)     Object.entries(params.eq).forEach(([k,v])=>{ url += k+"=eq."+encodeURIComponent(v)+"&"; });
-  if(params.gte)    Object.entries(params.gte).forEach(([k,v])=>{ url += k+"=gte."+encodeURIComponent(v)+"&"; });
-  if(params.lte)    Object.entries(params.lte).forEach(([k,v])=>{ url += k+"=lte."+encodeURIComponent(v)+"&"; });
-  if(params.order)  url += "order="+encodeURIComponent(params.order)+"&";
-  if(params.limit)  url += "limit="+params.limit+"&";
-  url = url.replace(/&$/, "");
-  const resp = await fetch(url, {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"}});
+  // params puede ser string querystring O objeto {select, eq, gte, lte, order, limit}
+  let qs = "";
+  if(typeof params === "string"){
+    // String querystring directo — usado por el módulo de ventas
+    qs = params;
+  } else if(params && typeof params === "object"){
+    let url = "";
+    if(params.select) url += "select="+encodeURIComponent(params.select)+"&";
+    if(params.eq)     Object.entries(params.eq).forEach(([k,v])=>{ url += k+"=eq."+encodeURIComponent(v)+"&"; });
+    if(params.gte)    Object.entries(params.gte).forEach(([k,v])=>{ url += k+"=gte."+encodeURIComponent(v)+"&"; });
+    if(params.lte)    Object.entries(params.lte).forEach(([k,v])=>{ url += k+"=lte."+encodeURIComponent(v)+"&"; });
+    if(params.order)  url += "order="+encodeURIComponent(params.order)+"&";
+    if(params.limit)  url += "limit="+params.limit+"&";
+    qs = url.replace(/&$/, "");
+  }
+  const fullUrl = SUPA_URL+"/rest/v1/"+table+(qs?"?"+qs:"");
+  const resp = await fetch(fullUrl, {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"}});
   if(!resp.ok) throw new Error("Supabase error "+resp.status+": "+await resp.text());
   return resp.json();
 }
@@ -1055,7 +1072,16 @@ function renderNav(){
   }
 }
 
-function setArea(a){ areaActual=a; renderNav(); renderContent(); }
+function setArea(a){
+  areaActual=a;
+  // Limpiar banners al cambiar de área
+  const _be=document.getElementById("banner-error");
+  const _bs=document.getElementById("banner-success");
+  if(_be) _be.className="banner banner-error hidden";
+  if(_bs) _bs.className="banner banner-success hidden";
+  renderNav();
+  renderContent();
+}
 function render(){ renderNav(); renderContent(); }
 
 function renderContent(){
@@ -1114,7 +1140,15 @@ function renderContent(){
       var btn=document.createElement("button");
       btn.className="nav-btn"+(finTab===id?" active":"");
       btn.textContent=label;
-      btn.addEventListener("click",(function(tabId){return function(){finTab=tabId;renderContent();};})(id));
+      btn.addEventListener("click",(function(tabId){return function(){
+          finTab=tabId;
+          // Limpiar banners al cambiar de tab
+          var _be2=document.getElementById("banner-error");
+          var _bs2=document.getElementById("banner-success");
+          if(_be2) _be2.className="banner banner-error hidden";
+          if(_bs2) _bs2.className="banner banner-success hidden";
+          renderContent();
+        };})(id));
       finTabsDiv.appendChild(btn);
     });
     })(); // cierre IIFE tabs finanzas
@@ -1127,9 +1161,8 @@ function renderContent(){
       if(finTab==="cobro") initChartsEfectividad();
       else if(finTab==="ventas"){
       setTimeout(async function(){
-        await venCargarConfig();   // carga config desde Supabase para empresa activa
-        renderVentasContifico();   // renderiza shell
-        venCargarDesdeBD();        // carga datos desde BD (instantáneo)
+        await venCargarConfig();  // carga config API de la empresa activa
+        venAutoCargar();          // renderiza shell + carga BD (ayer KPIs, mes gráficas)
       },80);
     }
       else initChartsFinanzas();
@@ -1550,7 +1583,7 @@ function initChartsKPI(area){
 }
 
 function initChartsTICs(){
-  const anioF=filtroPeriodo.anio>0?filtroPeriodo.anio:2025;
+  const anioF=filtroPeriodo.anio>0?filtroPeriodo.anio:2026;
   const mesF =filtroPeriodo.mes>0?filtroPeriodo.mes:0;
   const emp  =filtros.empresa;
   const base =[emp,anioF];
@@ -1801,7 +1834,7 @@ function renderLeadTime(){
   if(!cache.lead_time_impuestos) return "<div class='card' style='padding:32px;text-align:center;color:var(--amarillo)'>⏳ Tabla lead_time_impuestos no cargada. Usa el botón 🔄 Sincronizar en el footer.</div>";
   // Lead Time siempre muestra todos los datos disponibles (ignora filtro de mes)
   // Si hay filtro de año, usar ese; si no hay datos para ese año, usar el año con más datos
-  let anioF  = filtroPeriodo.anio>0?filtroPeriodo.anio:2025;
+  let anioF  = filtroPeriodo.anio>0?filtroPeriodo.anio:2026;
   const aniosDisp = [...new Set(all.map(r=>r.anio))].sort();
   if(aniosDisp.length>0 && !aniosDisp.includes(anioF)){
     anioF = aniosDisp[aniosDisp.length-1]; // usar el más reciente disponible
@@ -1938,7 +1971,7 @@ function calcularDesembolso(){
 
 function cargarDatosLT(){
   const mes  = parseInt(document.getElementById("lt-mes")?.value||"1");
-  const anio = parseInt(document.getElementById("lt-anio")?.value||"2025");
+  const anio = parseInt(document.getElementById("lt-anio")?.value||"2026");
   const cache = window._sbCache||{};
   const emp  = (cache.empresas||[]).find(e=>e.codigo===filtros.empresa);
   const d    = (cache.lead_time_impuestos||[]).find(r=>r.id_empresa===emp?.id&&parseInt(r.anio)===anio&&parseInt(r.mes)===mes);
@@ -1966,7 +1999,7 @@ function diasEntre(fechaBase, fechaHito){
 
 async function guardarLeadTime(){
   const mes   = parseInt(document.getElementById("lt-mes")?.value||"1");
-  const anio  = parseInt(document.getElementById("lt-anio")?.value||"2025");
+  const anio  = parseInt(document.getElementById("lt-anio")?.value||"2026");
   const cache = window._sbCache||{};
   const emp   = (cache.empresas||[]).find(e=>e.codigo===filtros.empresa);
   if(!emp){showError("Empresa no encontrada.");return;}
@@ -2027,7 +2060,7 @@ function initChartsLeadTime(){
   const cache = window._sbCache||{};
   const emp   = (cache.empresas||[]).find(e=>e.codigo===filtros.empresa);
   const all2  = emp?(cache.lead_time_impuestos||[]).filter(r=>r.id_empresa===emp.id):[];
-  let anioLT = filtroPeriodo.anio>0?parseInt(filtroPeriodo.anio):2025;
+  let anioLT = filtroPeriodo.anio>0?parseInt(filtroPeriodo.anio):2026;
   const all2Norm = all2.map(r=>({...r, anio:parseInt(r.anio), mes:parseInt(r.mes)}));
   const aniosLT = [...new Set(all2Norm.map(r=>r.anio))].filter(Boolean).sort((a,b)=>a-b);
   if(aniosLT.length>0 && !aniosLT.includes(anioLT)) anioLT = aniosLT[aniosLT.length-1];
@@ -2073,7 +2106,7 @@ function initChartsLeadTime(){
 // FINANZAS
 // ═══════════════════════════════════════════════════════════════
 function renderFinanzas(){
-  const anioF=filtroPeriodo.anio>0?filtroPeriodo.anio:2025;
+  const anioF=filtroPeriodo.anio>0?filtroPeriodo.anio:2026;
   const mesF =filtroPeriodo.mes>0?filtroPeriodo.mes:0;
   const emp  =filtros.empresa;
 
@@ -2198,7 +2231,7 @@ function renderFinanzas(){
 }
 
 function initChartsFinanzas(){
-  const anioF=filtroPeriodo.anio>0?filtroPeriodo.anio:2025;
+  const anioF=filtroPeriodo.anio>0?filtroPeriodo.anio:2026;
   const mesF =filtroPeriodo.mes>0?filtroPeriodo.mes:0;
   const emp  =filtros.empresa;
   let wherePP="id_empresa=(SELECT id FROM empresas WHERE codigo=?) AND anio=?";
@@ -2311,7 +2344,7 @@ function gVal(id){ return gId(id)?.value||""; }
 async function guardarEvento(){
   const empId=parseInt(gVal("ie-empresa")), fecha=gVal("ie-fecha"), desc=gVal("ie-desc").trim();
   if(!fecha||!desc){showError("Fecha y descripcion son obligatorios.");return;}
-  const mes=parseInt(gVal("ie-mes")), anio=parseInt(gVal("ie-anio")||"2025"), horas=parseFloat(gVal("ie-horas")||"0");
+  const mes=parseInt(gVal("ie-mes")), anio=parseInt(gVal("ie-anio")||"2026"), horas=parseFloat(gVal("ie-horas")||"0");
   try{
     const data={id_empresa:empId,semana:gVal("ie-semana"),mes:MESES_N[mes],anio,fecha_evento:fecha,
       descripcion:desc,informante:gVal("ie-informa"),horas_desconexion:horas,
@@ -2329,7 +2362,7 @@ async function guardarEvento(){
 async function guardarTicket(){
   const empId=parseInt(gVal("it-empresa")), fecha=gVal("it-fecha"), desc=gVal("it-desc").trim(), solic=gVal("it-solicitante").trim();
   if(!fecha||!desc||!solic){showError("Fecha, descripcion y solicitante son obligatorios.");return;}
-  const mes=parseInt(gVal("it-mes")), anio=parseInt(gVal("it-anio")||"2025");
+  const mes=parseInt(gVal("it-mes")), anio=parseInt(gVal("it-anio")||"2026");
   const mesNom=MESES_N[mes];
   const sols=(window._sbCache?.solicitudes_tic||[]);
   const numAct=Math.max(0,...sols.filter(s=>s.id_empresa===empId&&s.anio===anio).map(s=>s.numero||0));
@@ -3292,9 +3325,12 @@ function venCrearModal(){
     '</div>';
   document.body.appendChild(div);
   // Rellenar con config guardada
-  document.getElementById("ven-cfg-apikey").value = _venCFG.apikey||"";
-  document.getElementById("ven-cfg-token").value  = _venCFG.token||"";
-  document.getElementById("ven-cfg-proxy").value  = _venCFG.proxy||"";
+  document.getElementById("ven-cfg-apikey")?.value !== undefined &&
+    (document.getElementById("ven-cfg-apikey").value = (_venCFG.apikey==="via-proxy"?"":_venCFG.apikey)||"");
+  document.getElementById("ven-cfg-token")?.value  !== undefined &&
+    (document.getElementById("ven-cfg-token").value  = _venCFG.token||"");
+  document.getElementById("ven-cfg-proxy")?.value  !== undefined &&
+    (document.getElementById("ven-cfg-proxy").value  = _venCFG.proxy||"");
 }
 window.venCrearModal = venCrearModal;
 
@@ -3313,15 +3349,17 @@ function renderVentasContifico(){
   if(!el) return;
 
   // ── Fechas: por defecto ayer (carga rápida desde BD) ─────────
-  const hoyV = new Date();
+  const hoyV  = new Date();
   const ayerV = new Date(hoyV); ayerV.setDate(ayerV.getDate()-1);
-  const fmtD = d=>d.toISOString().slice(0,10);
+  const fmtD  = d => d.toISOString().slice(0,10);
   const stored = JSON.parse(sessionStorage.getItem("ven_fechas")||"{}");
+  // Default: ayer→ayer. Si ya hay datos de hoy en memoria, usar hoy→hoy
+  const hayDatosHoy = window._venVentas.some(v=>v.fecha_emision===fmtD(hoyV));
   const fIni = stored.ini || fmtD(ayerV);
-  const fFin = stored.fin || fmtD(hoyV);
+  const fFin = stored.fin || (hayDatosHoy ? fmtD(hoyV) : fmtD(ayerV));
 
   // ── KPIs desde memoria ─────────────────────────────────────────
-  const totalVentas = window._venVentas.reduce((s,d)=>s+d.total,0);
+  const totalVentas = (window._venVentas||[]).reduce((s,d)=>s+parseFloat(d.total||0),0);
   const nFacturas   = window._venVentas.length;
   const ticket      = nFacturas>0?totalVentas/nFacturas:0;
   const prods       = new Set(window._venDetalle.map(d=>d.producto_id)).size;
@@ -3331,12 +3369,15 @@ function renderVentasContifico(){
   const statusDot  = window._venCargando?"wait":nFacturas>0?"ok":cfgOk?"ok":"err";
   const statusText = window._venCargando?"Cargando datos...":
                      nFacturas>0?`${nFacturas} facturas · ${fIni} al ${fFin}`:
-                     cfgOk?"Listo · presiona Sincronizar para actualizar":"Sin configurar · haz clic en ⚙ Configurar API";
+                     cfgOk?"Listo · selecciona período y presiona Ver ventas":"Sin configurar · haz clic en ⚙ Configurar API";
 
-  let html = `
+  // Filtro período — igual que todos los indicadores del dashboard
+  let html = buildPeriodoUI ? buildPeriodoUI() : "";
+
+  html += `
   <div class="ven-header">
     <div class="ven-brand">
-      <div class="ven-logo">🥗</div>
+      <div class="ven-logo">💲</div>
       <div>
         <div class="ven-title">Ventas — FIN-IND-005</div>
         <div class="ven-sub">FIN-IND-005 · Ventas Contifico</div>
@@ -3346,31 +3387,39 @@ function renderVentasContifico(){
       <div class="ven-badge">${(window._sbCache?.empresas||[]).find(e=>e.codigo===filtros.empresa)?.nombre||"SUPERHEALTHY S.A.S."}</div>
       <button class="ven-config-btn" onclick="venAbrirConfig()">⚙ Configurar API</button>
     </div>
-  </div>
+  </div>`;
 
-  <div class="ven-filtros" style="margin-bottom:16px">
-    <span style="font-size:11px;color:var(--grisMed)">Período:</span>
+  html += `
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--grisMed);font-weight:600">Período:</span>
     <input type="date" id="ven-f-ini" class="form-input" style="width:140px;font-size:12px" value="${fIni}">
     <span style="font-size:11px;color:var(--grisMed)">al</span>
     <input type="date" id="ven-f-fin" class="form-input" style="width:140px;font-size:12px" value="${fFin}">
-    <button class="ven-sync-btn" id="ven-btn-bd" onclick="venCargarDesdeBD()" style="background:var(--azul)"
-      title="Carga desde Supabase (datos ya sincronizados, instantáneo)">
-      📂 Cargar
+    <button class="ven-sync-btn" id="ven-btn-main" onclick="venCargarOSincronizar()"
+      style="background:var(--tq);min-width:160px;justify-content:center">
+      <span id="ven-btn-icon">📂</span>
+      <span id="ven-btn-label">Ver ventas</span>
     </button>
-    <button class="ven-sync-btn" id="ven-btn-sync" onclick="venSincronizar()"
-      style="background:rgba(0,180,170,0.15);color:var(--tq);border:1px solid var(--tq)"
-      title="Consulta Contifico en tiempo real (puede tardar)">
-      <span id="ven-sync-icon">🔄</span> Actualizar desde Contifico
-    </button>
-    <div class="ven-status">
+    <div class="ven-status" style="margin-left:auto">
       <span class="ven-sdot ${statusDot}" id="ven-sdot"></span>
-      <span id="ven-stxt">${statusText}</span>
+      <span id="ven-stxt" style="font-size:11px">${statusText}</span>
     </div>
-  </div>`;
+  </div>
+  <div class="ven-progress-wrap" id="ven-progress-wrap" style="display:none;margin-bottom:8px">
+    <div class="ven-progress-bar indeterminate" id="ven-progress-bar"></div>
+  </div>
+  <div id="ven-progress-msg" style="font-size:11px;color:var(--grisMed);margin-bottom:8px;display:none"></div>`;
 
   if(!nFacturas){
     const cargandoHtml = window._venCargando
-      ? `<div style="font-size:13px;color:var(--grisMed)"><span style="display:inline-block;animation:spin .6s linear infinite;margin-right:8px">⏳</span>Cargando datos de ventas...</div>`
+      ? `<div class="ven-loading-overlay">
+          <div class="ven-spinner-ring"></div>
+          <div class="ven-loading-msg" id="ven-loading-msg-inner">${window._venProgreso||"Cargando datos de ventas..."}</div>
+          <div class="ven-loading-sub">Esto puede tomar unos segundos</div>
+          <div class="ven-progress-wrap" style="width:260px">
+            <div class="ven-progress-bar indeterminate"></div>
+          </div>
+        </div>`
       : `<div style="font-size:12px;color:var(--grisMed);margin-bottom:20px;line-height:1.6">
           ${cfgOk
             ? "Presiona <b>📂 Cargar</b> para ver datos guardados, o <b>🔄 Actualizar desde Contifico</b> para obtener datos en tiempo real."
@@ -3473,15 +3522,10 @@ function renderVentasContifico(){
   el.innerHTML = html;
   venCrearModal();
 
-  // Renderizar gráficas después del DOM
-  setTimeout(()=>{
-    venRenderTendencia();
-    venRenderDOW();
-    venRenderTopMonto();
-    venRenderTopCant();
-    venRenderDonut();
-    venRenderFacturas();
-  }, 50);
+  // Las gráficas se renderizan solo si hay datos
+  if((window._venVentasMes||[]).length > 0 || (window._venVentas||[]).length > 0){
+    venRenderCharts();
+  }
 }
 window.renderVentasContifico = renderVentasContifico;
 
@@ -3767,6 +3811,278 @@ async function venSincronizar(){
 
 
 // ── Carga desde Supabase (instantáneo, usa datos ya sincronizados) ────────
+
+// ── Botón único inteligente: carga BD primero, si no hay datos sincroniza ──
+
+// ── Carga automática al abrir el tab ─────────────────────────
+// KPIs: día anterior · Gráficas: mes completo desde BD
+
+// ── Helpers del módulo FIN-IND-005 Ventas ────────────────────
+function fmt$(v){ return "$"+parseFloat(v||0).toLocaleString("es-EC",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtK(v){ return v>=1000?(v/1000).toFixed(1)+"K":parseFloat(v).toFixed(0); }
+function fmtFechaLabel(s){ if(!s)return""; const[y,m,d]=s.split("-"); return d+"/"+m; }
+function mediaMovil(arr,n){ return arr.map((_,i)=>{ const sl=arr.slice(Math.max(0,i-n+1),i+1); return sl.reduce((a,b)=>a+b,0)/sl.length; }); }
+function parseFechaContifico(s){ if(!s)return""; const[d,m,y]=s.split("/"); return y+"-"+m+"-"+d; }
+function formatFechaApi(s){ const[y,m,d]=s.split("-"); return d+"/"+m+"/"+y; }
+function venActualizarStatus(tipo, texto){
+  window._venLastStatus={tipo,texto};
+  try{
+    const dot=document.getElementById("ven-sdot");
+    const txt=document.getElementById("ven-stxt");
+    if(dot) dot.className="ven-sdot "+tipo;
+    if(txt) txt.textContent=texto;
+  }catch(e){}
+}
+window.venActualizarStatus=venActualizarStatus;
+
+async function venAutoCargar(){
+  const hoy     = new Date();
+  const ayer    = new Date(hoy); ayer.setDate(ayer.getDate()-1);
+  const fmtD    = d => d.toISOString().slice(0,10);
+  const fAyer   = fmtD(ayer);
+  const fMesIni = fmtD(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+  const fHoy    = fmtD(hoy);
+
+  // Inicializar estado de carga
+  window._venCargando   = true;
+  window._venProgreso   = "Buscando datos del mes en base de datos...";
+  window._venVentas     = [];
+  window._venDetalle    = [];
+  window._venVentasMes  = [];
+  window._venDetalleMes = [];
+
+  // Mostrar spinner mientras carga (NO renderizar el dashboard aún)
+  const el = document.getElementById("ven-container");
+  if(el){
+    el.innerHTML = `
+      <div style="padding:16px">
+        ${buildPeriodoUI ? buildPeriodoUI() : ""}
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--grisMed);font-weight:600">Período:</span>
+          <input type="date" id="ven-f-ini" class="form-input" style="width:140px;font-size:12px" value="${fAyer}">
+          <span style="font-size:11px;color:var(--grisMed)">al</span>
+          <input type="date" id="ven-f-fin" class="form-input" style="width:140px;font-size:12px" value="${fAyer}">
+          <button class="ven-sync-btn" id="ven-btn-main" onclick="venCargarOSincronizar()"
+            style="background:var(--tq);min-width:160px;justify-content:center">
+            <span id="ven-btn-icon">⏳</span>
+            <span id="ven-btn-label">Cargando...</span>
+          </button>
+          <div class="ven-status" style="margin-left:auto">
+            <span class="ven-sdot wait" id="ven-sdot"></span>
+            <span id="ven-stxt" style="font-size:11px">Buscando datos...</span>
+          </div>
+        </div>
+        <div class="ven-progress-wrap" style="margin-bottom:12px">
+          <div class="ven-progress-bar indeterminate"></div>
+        </div>
+        <div class="ven-card" style="padding:48px;text-align:center">
+          <div class="ven-spinner-ring" style="margin:0 auto 16px"></div>
+          <div style="font-weight:700;color:var(--azul);font-size:15px;font-family:Raleway,sans-serif">
+            Cargando datos de ventas...
+          </div>
+          <div style="font-size:12px;color:var(--grisMed);margin-top:8px">
+            Consultando base de datos · ${fMesIni} al ${fHoy}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  try {
+    // Cargar mes completo desde BD con Promise.all (paralelo)
+    const [docsM, detsM] = await Promise.all([
+      sbQuery("ven_documento",
+        `fecha_emision=gte.${fMesIni}&fecha_emision=lte.${fHoy}&order=fecha_emision.asc&limit=5000`),
+      sbQuery("ven_detalle",
+        `fecha_emision=gte.${fMesIni}&fecha_emision=lte.${fHoy}&limit=20000`)
+    ]);
+
+    window._venVentasMes  = Array.isArray(docsM) ? docsM : [];
+    window._venDetalleMes = Array.isArray(detsM)  ? detsM : [];
+
+    // KPIs = último día con datos (ayer si hay, sino el más reciente en BD)
+    const fechasDisp=[...new Set(window._venVentasMes.map(d=>d.fecha_emision))].sort();
+    const ultimaFecha=fechasDisp[fechasDisp.length-1]||fAyer;
+    const fechaKPI=fechasDisp.includes(fAyer)?fAyer:ultimaFecha;
+    window._venVentas  = window._venVentasMes.filter(d=>d.fecha_emision===fechaKPI);
+    window._venDetalle = window._venDetalleMes.filter(d=>d.fecha_emision===fechaKPI);
+    // Actualizar inputs con la fecha real usada
+    setTimeout(()=>{
+      const iniEl=document.getElementById('ven-f-ini');
+      const finEl=document.getElementById('ven-f-fin');
+      if(iniEl) iniEl.value=fechaKPI;
+      if(finEl) finEl.value=fechaKPI;
+    },100);
+
+    if(window._venVentasMes.length > 0){
+      sessionStorage.setItem("ven_fechas", JSON.stringify({ini:fAyer, fin:fAyer}));
+      const sdot=document.getElementById('ven-sdot'),stxt=document.getElementById('ven-stxt');
+      if(sdot) sdot.className='ven-sdot ok';
+      if(stxt) stxt.textContent=window._venVentas.length+' facturas ayer ('+fAyer+') · '+window._venVentasMes.length+' en el mes';
+    } else {
+      const sdot2=document.getElementById('ven-sdot'),stxt2=document.getElementById('ven-stxt');
+      if(sdot2) sdot2.className='ven-sdot wait';
+      if(stxt2) stxt2.textContent='Sin datos en BD para este período';
+    }
+  } catch(e) {
+    console.error("venAutoCargar error:", e);
+    const sdot3=document.getElementById('ven-sdot'),stxt3=document.getElementById('ven-stxt');
+    if(sdot3) sdot3.className='ven-sdot err';
+    if(stxt3) stxt3.textContent='Error: '+e.message.slice(0,50);
+  } finally {
+    window._venCargando = false;
+    // Render completo del dashboard con datos
+    renderVentasContifico();
+    // Gráficas después de que el DOM esté listo
+    venRenderCharts();
+  }
+}
+window.venAutoCargar = venAutoCargar;
+
+async function venCargarOSincronizar(){
+  const btn   = document.getElementById("ven-btn-main");
+  const icon  = document.getElementById("ven-btn-icon");
+  const label = document.getElementById("ven-btn-label");
+  const wrap  = document.getElementById("ven-progress-wrap");
+  const msg   = document.getElementById("ven-progress-msg");
+
+  // Leer fechas del input — fallback a ayer si el DOM aún no está
+  const hoyFb  = new Date();
+  const ayerFb = new Date(hoyFb); ayerFb.setDate(ayerFb.getDate()-1);
+  const fmtFb  = d => d.toISOString().slice(0,10);
+  const inicio = document.getElementById("ven-f-ini")?.value || fmtFb(ayerFb);
+  const fin    = document.getElementById("ven-f-fin")?.value || fmtFb(ayerFb);
+  if(!inicio||!fin){ venShowToast("Selecciona el período","err"); return; }
+
+  // Estado: cargando
+  if(btn)  { btn.disabled=true; }
+  if(icon)  icon.textContent="⏳";
+  if(label) label.textContent="Cargando...";
+  if(wrap)  wrap.style.display="block";
+  if(msg)   { msg.style.display="block"; msg.textContent="Buscando datos en base de datos..."; }
+  window._venCargando = true;
+  window._venProgreso = "Buscando datos en base de datos...";
+  venActualizarStatus("wait","Cargando...");
+
+  try {
+    // Paso 1: intentar cargar desde Supabase
+    const qs   = `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}&order=fecha_emision.asc&limit=5000`;
+    const docs  = await sbQuery("ven_documento", qs);
+    const dets  = await sbQuery("ven_detalle",
+      `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}&limit=20000`);
+
+    window._venVentas  = Array.isArray(docs) ? docs : [];
+    window._venDetalle = Array.isArray(dets)  ? dets : [];
+
+    if(window._venVentas.length > 0){
+      // Hay datos en BD — mostrar directo
+      sessionStorage.setItem("ven_fechas", JSON.stringify({ini:inicio,fin:fin}));
+      venActualizarStatus("ok",`${window._venVentas.length} facturas · ${inicio} al ${fin}`);
+      if(msg) msg.textContent=`${window._venVentas.length} facturas cargadas desde base de datos`;
+      if(icon)  icon.textContent="📂";
+      if(label) label.textContent="Ver ventas";
+    } else {
+      // Sin datos en BD → sincronizar desde Contifico automáticamente
+      if(msg)  { msg.textContent="Sin datos locales — descargando desde Contifico..."; }
+      if(icon)  icon.textContent="🔄";
+      if(label) label.textContent="Descargando...";
+      window._venProgreso = "Conectando con Contifico...";
+
+      if(!_venCFG.proxy && !_venCFG.apikey){ venAbrirConfig(); return; }
+
+      // Procesar y guardar página por página — no esperar al final
+      window._venVentas=[]; window._venDetalle=[];
+      let page=1, totalGuardados=0;
+      const PAGE_SIZE=100;
+
+      while(true){
+        const progMsg=`Descargando página ${page}...`;
+        if(msg)  msg.textContent=progMsg;
+        if(wrap) wrap.style.display="block";
+        window._venProgreso=progMsg;
+
+        const qs2=`tipo_registro=CLI&tipo=FAC&fecha_inicial=${formatFechaApi(inicio)}&fecha_final=${formatFechaApi(fin)}&result_size=${PAGE_SIZE}&result_page=${page}`;
+        const pageDocs = await venContificoGET("registro/documento/?"+qs2);
+        if(!Array.isArray(pageDocs)||pageDocs.length===0) break;
+
+        // Procesar esta página
+        const pageVentas=[], pageDetalle=[];
+        for(const doc of pageDocs){
+          if(doc.anulado) continue;
+          pageVentas.push({
+            id_externo:doc.id, numero_doc:doc.documento||"",
+            fecha_emision:parseFechaContifico(doc.fecha_emision),
+            cliente_nombre:doc.cliente?.razon_social||"Consumidor Final",
+            cliente_id:doc.persona_id||"",
+            subtotal_0:parseFloat(doc.subtotal_0||0), subtotal_12:parseFloat(doc.subtotal_12||0),
+            iva:parseFloat(doc.iva||0), total:parseFloat(doc.total||0),
+            estado:doc.estado||"P", anulado:false,
+          });
+          for(const det of (doc.detalles||[])){
+            const nombre=(det.producto_nombre||"").trim()||(det.descripcion||"").trim()||det.producto_id;
+            pageDetalle.push({
+              id_documento:doc.id, fecha_emision:parseFechaContifico(doc.fecha_emision),
+              producto_id:det.producto_id||"", nombre_producto:nombre,
+              cantidad:parseFloat(det.cantidad||0), precio:parseFloat(det.precio||0),
+              descuento:parseFloat(det.porcentaje_descuento||0),
+              base_gravable:parseFloat(det.base_gravable||0),
+              subtotal:parseFloat(det.cantidad||0)*parseFloat(det.precio||0),
+            });
+          }
+        }
+
+        // Guardar esta página inmediatamente en Supabase
+        if(msg) msg.textContent=`Guardando página ${page} (${pageVentas.length} facturas)...`;
+        try{
+          // Documentos: solo los nuevos
+          const exist=await sbQuery("ven_documento",
+            `id_externo=in.(${pageVentas.map(v=>`"${v.id_externo}"`).join(",")})`+
+            `&select=id_externo`).catch(()=>[]);
+          const yaEnBD=new Set((Array.isArray(exist)?exist:[]).map(r=>r.id_externo));
+          const nuevos=pageVentas.filter(v=>!yaEnBD.has(v.id_externo));
+          if(nuevos.length>0) await sbInsert("ven_documento",nuevos);
+          // Detalle: siempre insertar (constraint UNIQUE protege duplicados)
+          if(pageDetalle.length>0){
+            for(let i=0;i<pageDetalle.length;i+=50){
+              await sbInsert("ven_detalle",pageDetalle.slice(i,i+50)).catch(e=>console.warn("det:",e.message));
+            }
+          }
+        }catch(e){ console.warn(`Página ${page} guardado error:`,e.message); }
+
+        // Acumular en memoria
+        window._venVentas=window._venVentas.concat(pageVentas);
+        window._venDetalle=window._venDetalle.concat(pageDetalle);
+        totalGuardados+=pageVentas.length;
+
+        // Actualizar UI con lo que ya tenemos
+        if(msg) msg.textContent=`${totalGuardados} facturas procesadas · ${window._venDetalle.length} líneas de detalle`;
+        renderVentasContifico(); // mostrar datos parciales mientras sigue descargando
+
+        if(pageDocs.length<PAGE_SIZE) break;
+        page++;
+      }
+      sessionStorage.setItem("ven_fechas",JSON.stringify({ini:inicio,fin:fin}));
+      venActualizarStatus("ok",`${window._venVentas.length} facturas sincronizadas`);
+      if(icon)  icon.textContent="📂";
+      if(label) label.textContent="Ver ventas";
+    }
+  } catch(e) {
+    console.error("venCargarOSincronizar:",e);
+    venShowToast("Error: "+e.message,"err");
+    venActualizarStatus("err","Error: "+e.message.slice(0,40));
+    if(icon)  icon.textContent="⚠";
+    if(label) label.textContent="Reintentar";
+  } finally {
+    window._venCargando=false;
+    if(btn)  btn.disabled=false;
+    if(wrap) wrap.style.display="none";
+    if(msg)  msg.style.display="none";
+    // Render completo: shell + gráficas
+    renderVentasContifico();
+    venRenderCharts();
+  }
+}
+window.venCargarOSincronizar=venCargarOSincronizar;
+
 async function venCargarDesdeBD(){
   const inicio = document.getElementById("ven-f-ini")?.value;
   const fin    = document.getElementById("ven-f-fin")?.value;
@@ -3774,6 +4090,11 @@ async function venCargarDesdeBD(){
 
   // Guardar fechas en sessionStorage para persistir entre navegaciones
   sessionStorage.setItem("ven_fechas", JSON.stringify({ini:inicio,fin:fin}));
+  // Sincronizar los inputs del DOM con los valores reales
+  const iniEl = document.getElementById("ven-f-ini");
+  const finEl = document.getElementById("ven-f-fin");
+  if(iniEl && !iniEl.value) iniEl.value = inicio;
+  if(finEl && !finEl.value) finEl.value = fin;
 
   const btnBd  = document.getElementById("ven-btn-bd");
   const btnSync= document.getElementById("ven-btn-sync");
@@ -3781,6 +4102,7 @@ async function venCargarDesdeBD(){
   if(btnSync){ btnSync.disabled=true; }
   window._venCargando = true;
   venActualizarStatus("wait", "Leyendo Supabase...");
+  window._venCargando = true;
 
   try {
     // Consultar ven_documento desde Supabase
@@ -3819,422 +4141,55 @@ async function venCargarDesdeBD(){
 window.venCargarDesdeBD = venCargarDesdeBD;
 
 async function venGuardarEnSupabase(inicio, fin){
-  // Estrategia: upsert por id_externo — no duplica aunque sincronices varias veces
-  // 1. Leer los id_externo ya existentes en BD para el período
-  // 2. Solo insertar los documentos nuevos (que no están en BD)
-  // 3. El detalle se sincroniza igual: solo filas nuevas por id_documento
   try {
-    // Obtener ids ya en BD para este período
+    // ── PASO 1: Documentos — solo insertar los nuevos ─────────
     const existing = await sbQuery("ven_documento",
       `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}&select=id_externo`);
     const idsEnBD = new Set((Array.isArray(existing)?existing:[]).map(r=>r.id_externo));
-
-    // Filtrar solo los documentos nuevos (que Contifico devolvió pero BD no tiene)
-    const nuevosVentas = window._venVentas.filter(v=>!idsEnBD.has(v.id_externo));
+    const nuevosVentas = (window._venVentas||[]).filter(v=>!idsEnBD.has(v.id_externo));
 
     if(nuevosVentas.length > 0){
-      // Insertar solo los documentos nuevos en lotes de 100
       for(let i=0;i<nuevosVentas.length;i+=100){
         await sbInsert("ven_documento", nuevosVentas.slice(i,i+100));
       }
-      console.log(`BD: ${nuevosVentas.length} docs nuevos insertados, ${idsEnBD.size} ya existían`);
+      console.log(`BD docs: ${nuevosVentas.length} nuevos, ${idsEnBD.size} existían`);
+    }
 
-      // Insertar el detalle solo de los docs nuevos
-      const idsNuevos = new Set(nuevosVentas.map(v=>v.id_externo));
-      const nuevosDetalle = window._venDetalle.filter(d=>idsNuevos.has(d.id_documento));
-      for(let i=0;i<nuevosDetalle.length;i+=100){
-        await sbInsert("ven_detalle", nuevosDetalle.slice(i,i+100));
+    // ── PASO 2: Detalle — SIEMPRE intentar insertar todo ──────
+    // Usa el UNIQUE constraint (id_documento, producto_id) para ignorar duplicados
+    // Esto garantiza que ven_detalle se llene aunque los docs ya existieran
+    const todoDetalle = window._venDetalle||[];
+    if(todoDetalle.length > 0){
+      // Verificar cuántos detalles hay en BD para este período
+      const existDet = await sbQuery("ven_detalle",
+        `fecha_emision=gte.${inicio}&fecha_emision=lte.${fin}&select=id&limit=1`);
+      const detalleEnBD = Array.isArray(existDet) && existDet.length > 0;
+
+      if(!detalleEnBD){
+        // ven_detalle vacío para este período → insertar todo
+        let insertados = 0;
+        for(let i=0;i<todoDetalle.length;i+=100){
+          try{
+            await sbInsert("ven_detalle", todoDetalle.slice(i,i+100));
+            insertados += Math.min(100, todoDetalle.length-i);
+          }catch(e){
+            console.warn(`Lote detalle ${i}: ${e.message}`);
+          }
+        }
+        console.log(`BD detalle: ${insertados} líneas insertadas`);
+        venShowToast(`💾 ${nuevosVentas.length} docs · ${insertados} líneas de detalle guardadas`, "ok");
+      } else {
+        console.log(`BD detalle: ya tiene datos para este período`);
+        venShowToast(`✅ ${idsEnBD.size} docs existentes · detalle ya cargado`, "ok");
       }
-      venShowToast(
-        `💾 ${nuevosVentas.length} docs nuevos guardados · ${idsEnBD.size} ya existían en BD`,
-        "ok"
-      );
     } else {
-      console.log("BD: todos los documentos ya existen, nada que insertar");
-      venShowToast(`✅ Todos los documentos ya estaban en BD (${idsEnBD.size} existentes)`, "ok");
+      venShowToast(`✅ ${idsEnBD.size} docs en BD · sin detalle de productos`, "ok");
     }
   } catch(e) {
-    console.warn("Supabase save warning:", e.message);
+    console.warn("venGuardarEnSupabase error:", e.message);
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// RENDER DASHBOARD
-// ═══════════════════════════════════════════════════════════════
-function venRenderDashboard(){
-  if(!window._venVentas.length){
-    venShowToast("Sin ventas en el período seleccionado", "err");
-    return;
-  }
-  venRenderKPIs();
-  venRenderTendencia();
-  venRenderDOW();
-  venRenderTopMonto();
-  venRenderTopCant();
-  venRenderHeatmap();
-  venRenderDonut();
-  venRenderFacturas();
-}
-
-// ── KPIs ─────────────────────────────────────────────────────
-function venRenderKPIs(){
-  const totalVentas = window._venVentas.reduce((s,d)=>s+d.total, 0);
-  const nFacturas   = window._venVentas.length;
-  const ticket      = nFacturas>0 ? totalVentas/nFacturas : 0;
-  const prods       = new Set(window._venDetalle.map(d=>d.producto_id)).size;
-
-  document.getElementById("kpi-total").textContent    = fmt$(totalVentas);
-  document.getElementById("kpi-facturas").textContent = nFacturas.toLocaleString();
-  document.getElementById("kpi-ticket").textContent   = fmt$(ticket);
-  document.getElementById("kpi-productos").textContent= prods.toLocaleString();
-}
-
-// ── TENDENCIA DIARIA ─────────────────────────────────────────
-function venRenderTendencia(){
-  const porDia = {};
-  window._venVentas.forEach(d=>{
-    const k = d.fecha_emision;
-    porDia[k] = (porDia[k]||0) + d.total;
-  });
-  const dias   = Object.keys(porDia).sort();
-  const montos = dias.map(d=>porDia[d]);
-
-  const ctx = document.getElementById("ven-chart-tend");
-  if(_charts.tendencia) _charts.tendencia.destroy();
-  _charts.tendencia = new Chart(ctx, {
-    type: "bar",
-    data:{
-      labels: dias.map(d=>fmtFechaLabel(d)),
-      datasets:[
-        {
-          label:"Ventas",
-          data: montos,
-          backgroundColor: "rgba(0,180,170,0.18)",
-          borderColor: "var(--sh)",
-          borderWidth: 2,
-          borderRadius: 3,
-          order: 2
-        },
-        {
-          label:"Tendencia",
-          data: mediaMovil(montos, 5),
-          type:"line",
-          borderColor:"#007A72",
-          borderWidth:2,
-          pointRadius:0,
-          fill:false,
-          tension:0.4,
-          order:1
-        }
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{ callbacks:{ label: c=>"$"+c.raw.toFixed(2) } }
-      },
-      scales:{
-        x:{ticks:{color:"#6B87A8",font:{size:9},maxRotation:45},grid:{display:false}},
-        y:{ticks:{color:"#6B87A8",callback:v=>"$"+fmtK(v)},grid:{color:"#E8EEF5"}}
-      }
-    }
-  });
-}
-
-// ── DÍA DE LA SEMANA ─────────────────────────────────────────
-function venRenderDOW(){
-  const DIAS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-  const sumDow = [0,0,0,0,0,0,0];
-  const cntDow = [0,0,0,0,0,0,0];
-  window._venVentas.forEach(d=>{
-    const dow = new Date(d.fecha_emision+"T12:00:00").getDay();
-    sumDow[dow] += d.total;
-    cntDow[dow]++;
-  });
-  const avgDow = sumDow.map((s,i)=>cntDow[i]>0?s/cntDow[i]:0);
-  const maxAvg = Math.max(...avgDow)||1;
-
-  const barsEl   = document.getElementById("ven-dow-bars");
-  const labelsEl = document.getElementById("ven-dow-lbl");
-  barsEl.innerHTML   = "";
-  labelsEl.innerHTML = "";
-
-  avgDow.forEach((v,i)=>{
-    const pct = (v/maxAvg)*100;
-    const cls = pct>=90?"max":pct>=60?"high":"med";
-    const hpx = Math.max(Math.round(pct*1.2), 4); // altura en px sobre base 120px
-    const wrap = document.createElement("div");
-    wrap.className = "dow-bar-wrap";
-    wrap.innerHTML = `
-      <div style="flex:1;display:flex;align-items:flex-end;width:100%;min-height:120px">
-        <div class="dow-bar ${cls}" style="height:${hpx}px;width:100%" title="${DIAS[i]}: $${fmtK(v)}"></div>
-      </div>
-      <div class="dow-bar-label">${DIAS[i]}</div>
-      <div class="dow-bar-val">${v>0?"$"+fmtK(v):"-"}</div>
-    `;
-    barsEl.appendChild(wrap);
-  });
-
-  // Leyenda del día más vendido
-  const iMax = avgDow.indexOf(Math.max(...avgDow));
-  labelsEl.innerHTML = `<div style="font-size:11px;color:var(--sh);font-weight:700;margin-top:8px">
-    🏆 Mayor promedio: <b>${DIAS[iMax]}</b> — $${fmtK(avgDow[iMax])}/día
-  </div>`;
-}
-
-// ── TOP PRODUCTOS POR MONTO ───────────────────────────────────
-function venRenderTopMonto(){
-  const mapa = {};
-  window._venDetalle.forEach(d=>{
-    if(!mapa[d.producto_id]) mapa[d.producto_id]={nombre:d.nombre_producto,monto:0,cant:0};
-    mapa[d.producto_id].monto += d.subtotal;
-    mapa[d.producto_id].cant  += d.cantidad;
-  });
-  const lista = Object.values(mapa).sort((a,b)=>b.monto-a.monto).slice(0,10);
-  const maxM  = lista[0]?.monto||1;
-  const totM  = lista.reduce((s,p)=>s+p.monto,0);
-
-  document.getElementById("ven-tbody-monto").innerHTML = lista.map((p,i)=>`
-    <tr>
-      <td><span class="rank-num ${i<3?"top3":""}">${i+1}</span></td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.nombre)}">${esc(p.nombre)}</td>
-      <td class="monto-cell" style="text-align:right">${fmt$(p.monto)}</td>
-      <td style="text-align:right;color:var(--gris)">${p.cant.toFixed(0)}</td>
-      <td>
-        <div class="prod-bar-wrap">
-          <div class="prod-bar" style="width:${(p.monto/maxM*100).toFixed(1)}%"></div>
-        </div>
-        <div style="font-size:9px;color:var(--gris);margin-top:2px">${(p.monto/totM*100).toFixed(1)}%</div>
-      </td>
-    </tr>
-  `).join("");
-}
-
-// ── TOP PRODUCTOS POR CANTIDAD ────────────────────────────────
-function venRenderTopCant(){
-  const mapa = {};
-  window._venDetalle.forEach(d=>{
-    if(!mapa[d.producto_id]) mapa[d.producto_id]={nombre:d.nombre_producto,monto:0,cant:0};
-    mapa[d.producto_id].monto += d.subtotal;
-    mapa[d.producto_id].cant  += d.cantidad;
-  });
-  const lista = Object.values(mapa).sort((a,b)=>b.cant-a.cant).slice(0,10);
-  const maxC  = lista[0]?.cant||1;
-  const totC  = lista.reduce((s,p)=>s+p.cant,0);
-
-  document.getElementById("ven-tbody-cant").innerHTML = lista.map((p,i)=>`
-    <tr>
-      <td><span class="rank-num ${i<3?"top3":""}">${i+1}</span></td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.nombre)}">${esc(p.nombre)}</td>
-      <td class="monto-cell" style="text-align:right">${p.cant.toFixed(0)} und</td>
-      <td>
-        <div class="prod-bar-wrap">
-          <div class="prod-bar" style="width:${(p.cant/maxC*100).toFixed(1)}%;background:var(--verde)"></div>
-        </div>
-        <div style="font-size:9px;color:var(--gris);margin-top:2px">${(p.cant/totC*100).toFixed(1)}%</div>
-      </td>
-    </tr>
-  `).join("");
-}
-
-// ── HEATMAP ────────────────────────────────────────────────────
-function venRenderHeatmap(){
-  const porDia = {};
-  window._venVentas.forEach(d=>{ porDia[d.fecha_emision] = (porDia[d.fecha_emision]||0)+d.total; });
-
-  const inicio = document.getElementById("ven-f-ini").value;
-  const fin    = document.getElementById("ven-f-fin").value;
-  const maxV   = Math.max(...Object.values(porDia))||1;
-
-  // Agrupar por mes
-  const meses = {};
-  for(let d=new Date(inicio); d<=new Date(fin); d.setDate(d.getDate()+1)){
-    const k = d.toISOString().slice(0,10);
-    const mes = k.slice(0,7);
-    if(!meses[mes]) meses[mes]=[];
-    meses[mes].push({k, v:porDia[k]||0, dia:d.getDate()});
-  }
-
-  const DIAS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-  let html = "";
-
-  for(const [mes, dias] of Object.entries(meses)){
-    const [y,m] = mes.split("-");
-    const nomMes = new Date(y,m-1,1).toLocaleDateString("es-EC",{month:"long",year:"numeric"});
-    html += `<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${nomMes}</div>`;
-    html += `<div class="heatmap-grid">`;
-    // Headers días
-    html += `<div class="hm-label"></div>`;
-    DIAS.forEach(d=>{ html+=`<div class="hm-day-label">${d}</div>`; });
-
-    // Calcular offset del primer día
-    const primerDia = new Date(y,m-1,1).getDay();
-
-    // Agrupar en semanas
-    const semanas = [[]];
-    let sem = 0;
-    for(let i=0;i<primerDia;i++) semanas[0].push(null);
-    dias.forEach(d=>{
-      if(semanas[sem].length===7){ sem++; semanas.push([]); }
-      semanas[sem].push(d);
-    });
-    while(semanas[semanas.length-1].length<7) semanas[semanas.length-1].push(null);
-
-    semanas.forEach((s,si)=>{
-      html += `<div class="hm-label" style="font-size:9px">S${si+1}</div>`;
-      s.forEach(d=>{
-        if(!d){ html+=`<div class="hm-cell"></div>`; return; }
-        const pct = d.v/maxV;
-        const cls = d.v===0?"":pct<0.2?"l1":pct<0.4?"l2":pct<0.6?"l3":pct<0.8?"l4":"l5";
-        html+=`<div class="hm-cell ${cls}" data-tooltip="${d.k}: $${d.v.toFixed(0)}">${d.dia}</div>`;
-      });
-    });
-
-    html += `</div></div>`;
-  }
-
-  document.getElementById("ven-heatmap").innerHTML = html;
-}
-
-// ── DONUT CATEGORÍAS ──────────────────────────────────────────
-function venRenderDonut(){
-  // Simulamos categorías por palabra clave del nombre del producto
-  // En una integración real se usaría categoria_id de Contifico
-  const cats = {};
-  window._venDetalle.forEach(d=>{
-    const nom = (d.nombre_producto||"").toLowerCase();
-    let cat = "Otros";
-    if(nom.includes("ensalada")||nom.includes("bowl")) cat="Ensaladas & Bowls";
-    else if(nom.includes("jugo")||nom.includes("bebida")||nom.includes("limonada")) cat="Bebidas";
-    else if(nom.includes("wrap")||nom.includes("sándwich")) cat="Wraps & Sándwiches";
-    else if(nom.includes("postre")||nom.includes("galleta")||nom.includes("brownie")) cat="Postres";
-    else if(nom.includes("proteína")||nom.includes("pollo")||nom.includes("atún")) cat="Proteínas";
-    cats[cat] = (cats[cat]||0) + d.subtotal;
-  });
-
-  const labels = Object.keys(cats);
-  const data   = labels.map(k=>cats[k]);
-  const COLORS  = ["#00B4AA","#16A97A","#007A72","#D4A012","#6B87A8","#E05050","#4DD4AE"];
-
-  const ctx = document.getElementById("ven-chart-donut");
-  if(_charts.donut) _charts.donut.destroy();
-  _charts.donut = new Chart(ctx,{
-    type:"doughnut",
-    data:{ labels, datasets:[{ data, backgroundColor:COLORS.slice(0,labels.length), borderWidth:0 }] },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      cutout:"65%",
-      plugins:{
-        legend:{ position:"right", labels:{ color:"#6B87A8", font:{family:"DM Sans",size:11}, padding:12, boxWidth:12 } },
-        tooltip:{ callbacks:{ label: c=>" $"+c.raw.toFixed(2)+" ("+((c.raw/data.reduce((a,b)=>a+b,0))*100).toFixed(1)+"%)" } }
-      }
-    }
-  });
-}
-
-// ── ÚLTIMAS FACTURAS ──────────────────────────────────────────
-function venRenderFacturas(){
-  const ultimas = [...window._venVentas].sort((a,b)=>b.fecha_emision.localeCompare(a.fecha_emision)).slice(0,20);
-  document.getElementById("ven-tbody-facts").innerHTML = ultimas.map(d=>`
-    <tr>
-      <td style="font-family:monospace;font-size:11px">${esc(d.numero_doc||d.id_externo)}</td>
-      <td style="font-size:11px">${fmtFechaLabel(d.fecha_emision)}</td>
-      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(d.cliente_nombre)}">${esc(d.cliente_nombre)}</td>
-      <td class="monto-cell" style="text-align:right">${fmt$(d.total)}</td>
-    </tr>
-  `).join("");
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ── Helpers específicos del módulo de ventas ─────────────────
-function fmt$(v){ return "$"+parseFloat(v||0).toLocaleString("es-EC",{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmtK(v){ return v>=1000?(v/1000).toFixed(1)+"K":parseFloat(v).toFixed(0); }
-function parseFechaContifico(s){ if(!s)return""; const [d,m,y]=s.split("/"); return `${y}-${m}-${d}`; }
-function formatFechaApi(s){ const [y,m,d]=s.split("-"); return d+"/"+m+"/"+y; }
-function fmtFechaLabel(s){ if(!s)return""; const [y,m,d]=s.split("-"); return d+"/"+m; }
-function mediaMovil(arr, n){ return arr.map((_,i)=>{ const sl=arr.slice(Math.max(0,i-n+1),i+1); return sl.reduce((a,b)=>a+b,0)/sl.length; }); }
-function venActualizarStatus(tipo, texto){
-  const dot=document.getElementById("ven-sdot");
-  const txt=document.getElementById("ven-stxt");
-  if(dot) dot.className="ven-sdot "+tipo;
-  if(txt) txt.textContent=texto;
-}
-function venShowToast(msg, tipo="ok"){
-  // Reusar el sistema de toast del dashboard principal si existe
-  if(typeof showBanner==="function"){ tipo==="err"?showError(msg):showSuccess(msg); return; }
-  const t=document.getElementById("toast")||document.getElementById("banner-success");
-  if(!t) return;
-  t.textContent=msg; t.className="show "+(tipo==="err"?"err":"ok");
-  clearTimeout(window._toastTimer);
-  window._toastTimer=setTimeout(()=>{ t.className=""; },4000);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════════
-// MESA DE SERVICIO TIC — Actualización de estado de tickets
-// ═══════════════════════════════════════════════════════════════
-let _modalTicketId = null;
-
-function _crearModalTicket(){
-  if(document.getElementById("modal-ticket")) return;
-  const div=document.createElement("div");
-  div.id="modal-ticket";
-  div.style.cssText="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center";
-  div.innerHTML=
-    '<div style="background:var(--bg,#F5F7FA);border-radius:12px;padding:28px 32px;width:420px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.25)">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">' +
-    '<div style="font-family:Raleway,sans-serif;font-weight:800;font-size:15px;color:var(--azul)">🎫 Actualizar Ticket <span id="modal-ticket-num" style="color:var(--tq)"></span></div>' +
-    '<button onclick="cerrarModalTicket()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--grisMed)">✕</button></div>' +
-    '<div style="font-size:12px;color:var(--grisMed);margin-bottom:14px;background:var(--grisLight,#E8EEF5);padding:8px 12px;border-radius:6px" id="modal-ticket-desc"></div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
-    '<div class="form-group"><label class="form-label">Nuevo Estado</label>' +
-    '<select id="modal-ticket-estado" class="form-select">' +
-    '<option value="En progreso">En progreso</option>' +
-    '<option value="Atendido">Atendido ✓</option>' +
-    '<option value="Pendiente">Pendiente</option>' +
-    '</select></div>' +
-    '<div class="form-group"><label class="form-label">Fecha de Atención</label>' +
-    '<input type="date" id="modal-ticket-fecha" class="form-input"/></div>' +
-    '</div>' +
-    '<div class="form-group" style="margin-top:8px"><label class="form-label">Observación / Solución aplicada</label>' +
-    '<textarea id="modal-ticket-obs" class="form-textarea" rows="3" placeholder="Describe la solución o acción realizada..."></textarea></div>' +
-    '<div style="display:flex;gap:10px;margin-top:16px">' +
-    '<button onclick="guardarEstadoTicket()" class="submit-btn" style="flex:1">💾 Guardar Cambio</button>' +
-    '<button onclick="cerrarModalTicket()" class="submit-btn" style="background:var(--grisMed);flex:0 0 auto;padding:10px 18px">Cancelar</button>' +
-    '</div></div>';
-  document.body.appendChild(div);
-}
-
-function abrirModalTicket(id){
-  _crearModalTicket();
-  const cache=window._sbCache||{};
-  const ticket=(cache.solicitudes_tic||[]).find(s=>s.id===id);
-  if(!ticket){ showError("Ticket no encontrado."); return; }
-  _modalTicketId=id;
-  const numEl=document.getElementById("modal-ticket-num");
-  const descEl=document.getElementById("modal-ticket-desc");
-  const estEl=document.getElementById("modal-ticket-estado");
-  const fechEl=document.getElementById("modal-ticket-fecha");
-  const obsEl=document.getElementById("modal-ticket-obs");
-  if(numEl)  numEl.textContent="#"+(ticket.numero||"");
-  if(descEl) descEl.textContent=(ticket.descripcion||"")+(ticket.solicitante?" — "+ticket.solicitante:"");
-  if(estEl)  estEl.value=ticket.estado||"En progreso";
-  if(fechEl) fechEl.value=ticket.fecha_atencion||new Date().toISOString().slice(0,10);
-  if(obsEl)  obsEl.value=ticket.observacion||"";
-  document.getElementById("modal-ticket").style.display="flex";
-}
-window.abrirModalTicket=abrirModalTicket;
-
-function cerrarModalTicket(){
-  const m=document.getElementById("modal-ticket");
-  if(m) m.style.display="none";
-  _modalTicketId=null;
-}
-window.cerrarModalTicket=cerrarModalTicket;
 
 async function guardarEstadoTicket(){
   if(!_modalTicketId){ showError("No hay ticket seleccionado."); return; }
@@ -4258,5 +4213,200 @@ async function guardarEstadoTicket(){
 }
 window.guardarEstadoTicket=guardarEstadoTicket;
 
+
+
+// ═══════════════════════════════════════════════════════════════
+// FUNCIONES DE RENDER — FIN-IND-005 Ventas
+// ═══════════════════════════════════════════════════════════════
+
+
+// ── Render central de gráficas — reintenta hasta que el DOM esté listo ──
+function venRenderCharts(intentos){
+  intentos = intentos || 0;
+  if(intentos > 20) return; // máximo 2 segundos de reintentos
+
+  // Verificar que los elementos clave están en el DOM
+  const canvasTend  = document.getElementById("ven-chart-tend");
+  const canvasDonut = document.getElementById("ven-chart-donut");
+  const tbodyMonto  = document.getElementById("ven-tbody-monto");
+
+  if(!canvasTend || !tbodyMonto){
+    // DOM aún no está listo — reintentar en 100ms
+    setTimeout(()=>venRenderCharts(intentos+1), 100);
+    return;
+  }
+
+  // DOM listo — destruir charts anteriores y renderizar
+  ['tend','donut'].forEach(k=>{
+    if(window._venCharts[k]){
+      try{ window._venCharts[k].destroy(); }catch(e){}
+      delete window._venCharts[k];
+    }
+  });
+
+  venRenderTendencia();
+  venRenderDOW();
+  venRenderTopMonto();
+  venRenderTopCant();
+  if(canvasDonut) venRenderDonut();
+  venRenderFacturas();
+}
+window.venRenderCharts = venRenderCharts;
+
+function venRenderTendencia(){
+  const ctx = document.getElementById("ven-chart-tend");
+  if(!ctx) return;
+  const porDia = {};
+  // Usar mes completo para la tendencia
+  const ventasTendencia = window._venVentasMes||window._venVentas||[];
+  ventasTendencia.forEach(d=>{
+    const k = d.fecha_emision||"";
+    if(!k) return;
+    porDia[k] = (porDia[k]||0) + parseFloat(d.total||0);
+  });
+  const dias   = Object.keys(porDia).sort();
+  const montos = dias.map(d=>porDia[d]);
+  if(!dias.length){
+    const ctxDraw=ctx.getContext("2d");
+    if(ctxDraw){ ctxDraw.clearRect(0,0,ctx.width,ctx.height); ctxDraw.fillStyle="#6B87A8"; ctxDraw.font="13px 'DM Sans',sans-serif"; ctxDraw.textAlign="center"; ctxDraw.fillText("Sin datos en el período",ctx.width/2||200,ctx.height/2||110); }
+    return;
+  }
+  if(window._venCharts["tend"]) try{ window._venCharts["tend"].destroy(); }catch(e){}
+  window._venCharts["tend"] = new Chart(ctx,{
+    type:"bar",
+    data:{
+      labels:dias.map(d=>fmtFechaLabel(d)),
+      datasets:[
+        {label:"Ventas",data:montos,backgroundColor:"rgba(0,180,170,0.18)",borderColor:"#00B4AA",borderWidth:2,borderRadius:3,order:2},
+        {label:"Tendencia",data:mediaMovil(montos,5),type:"line",borderColor:"#007A72",borderWidth:2,pointRadius:0,fill:false,tension:0.4,order:1}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>"$"+parseFloat(c.raw||0).toFixed(2)}}},
+      scales:{
+        x:{ticks:{color:"#6B87A8",font:{size:9},maxRotation:45},grid:{display:false}},
+        y:{ticks:{color:"#6B87A8",callback:v=>"$"+fmtK(v)},grid:{color:"#E8EEF5"}}
+      }
+    }
+  });
+}
+
+function venRenderDOW(){
+  const barsEl   = document.getElementById("ven-dow-bars");
+  const labelsEl = document.getElementById("ven-dow-lbl");
+  if(!barsEl) return;
+  const DIAS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  const sumDow=[0,0,0,0,0,0,0], cntDow=[0,0,0,0,0,0,0];
+  const ventasDOW = window._venVentasMes||window._venVentas||[];
+  ventasDOW.forEach(d=>{
+    if(!d.fecha_emision) return;
+    const dow=new Date(d.fecha_emision+"T12:00:00").getDay();
+    sumDow[dow]+=parseFloat(d.total||0); cntDow[dow]++;
+  });
+  const avgDow=sumDow.map((s,i)=>cntDow[i]>0?s/cntDow[i]:0);
+  const maxAvg=Math.max(...avgDow)||1;
+  if(maxAvg<=0){ barsEl.innerHTML='<div style="color:var(--grisMed);font-size:12px;padding:20px;text-align:center">Sin datos suficientes</div>'; return; }
+  barsEl.innerHTML="";
+  if(labelsEl) labelsEl.innerHTML="";
+  avgDow.forEach((v,i)=>{
+    const pct=(v/maxAvg)*100;
+    const cls=pct>=90?"max":pct>=60?"high":"med";
+    const hpx=Math.max(Math.round(pct*1.2),4);
+    const wrap=document.createElement("div");
+    wrap.className="ven-dow-wrap";
+    wrap.innerHTML=`<div style="flex:1;display:flex;align-items:flex-end;width:100%;min-height:120px"><div class="ven-dow-bar ${cls}" style="height:${hpx}px;width:100%"></div></div><div class="ven-dow-lbl">${DIAS[i]}</div><div class="ven-dow-val">${v>0?"$"+fmtK(v):"-"}</div>`;
+    barsEl.appendChild(wrap);
+  });
+  const iMax=avgDow.indexOf(Math.max(...avgDow));
+  if(labelsEl) labelsEl.innerHTML=`<div style="font-size:11px;color:var(--tq);font-weight:700;margin-top:8px">🏆 Mayor promedio: <b>${DIAS[iMax]}</b> — $${fmtK(avgDow[iMax])}/día</div>`;
+}
+
+function venRenderTopMonto(){
+  const tbodyM=document.getElementById("ven-tbody-monto");
+  if(!tbodyM) return;
+  const mapa={};
+  (window._venDetalleMes||window._venDetalle||[]).forEach(d=>{
+    if(!d.producto_id) return;
+    if(!mapa[d.producto_id]) mapa[d.producto_id]={nombre:d.nombre_producto||d.producto_id,monto:0,cant:0};
+    mapa[d.producto_id].monto+=parseFloat(d.subtotal||0);
+    mapa[d.producto_id].cant+=parseFloat(d.cantidad||0);
+  });
+  const lista=Object.values(mapa).sort((a,b)=>b.monto-a.monto).slice(0,10);
+  const maxM=lista[0]?.monto||1, totM=lista.reduce((s,p)=>s+p.monto,0);
+  if(!lista.length){ tbodyM.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--grisMed)">Sin detalle de productos · sincroniza desde Contifico para cargar</td></tr>'; return; }
+  tbodyM.innerHTML=lista.map((p,i)=>`<tr>
+    <td><span class="ven-rank ${i<3?"top3":""}">${i+1}</span></td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.nombre)}">${esc(p.nombre)}</td>
+    <td class="ven-monto" style="text-align:right">$${parseFloat(p.monto).toLocaleString("es-EC",{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    <td style="text-align:right;color:var(--gris)">${parseFloat(p.cant).toFixed(0)}</td>
+    <td><div class="ven-bar-wrap"><div class="ven-bar-fill" style="width:${(p.monto/maxM*100).toFixed(1)}%"></div></div><div style="font-size:9px;color:var(--gris);margin-top:2px">${(p.monto/totM*100).toFixed(1)}%</div></td>
+  </tr>`).join("");
+}
+
+function venRenderTopCant(){
+  const tbodyC=document.getElementById("ven-tbody-cant");
+  if(!tbodyC) return;
+  const mapa={};
+  (window._venDetalleMes||window._venDetalle||[]).forEach(d=>{
+    if(!d.producto_id) return;
+    if(!mapa[d.producto_id]) mapa[d.producto_id]={nombre:d.nombre_producto||d.producto_id,monto:0,cant:0};
+    mapa[d.producto_id].monto+=parseFloat(d.subtotal||0);
+    mapa[d.producto_id].cant+=parseFloat(d.cantidad||0);
+  });
+  const lista=Object.values(mapa).sort((a,b)=>b.cant-a.cant).slice(0,10);
+  const maxC=lista[0]?.cant||1, totC=lista.reduce((s,p)=>s+p.cant,0);
+  if(!lista.length){ tbodyC.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--grisMed)">Sin detalle de productos · sincroniza desde Contifico</td></tr>'; return; }
+  tbodyC.innerHTML=lista.map((p,i)=>`<tr>
+    <td><span class="ven-rank ${i<3?"top3":""}">${i+1}</span></td>
+    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.nombre)}">${esc(p.nombre)}</td>
+    <td class="ven-monto" style="text-align:right">${parseFloat(p.cant).toFixed(0)} und</td>
+    <td><div class="ven-bar-wrap"><div class="ven-bar-fill" style="width:${(p.cant/maxC*100).toFixed(1)}%;background:var(--verde)"></div></div><div style="font-size:9px;color:var(--gris);margin-top:2px">${(p.cant/totC*100).toFixed(1)}%</div></td>
+  </tr>`).join("");
+}
+
+function venRenderDonut(){
+  const ctx2=document.getElementById("ven-chart-donut");
+  if(!ctx2) return;
+  const detalleMes=window._venDetalleMes||window._venDetalle||[];
+  if(!detalleMes.length) return;
+  const cats={};
+  detalleMes.forEach(d=>{
+    const nom=(d.nombre_producto||"").toLowerCase();
+    let cat="Otros";
+    if(nom.includes("ensalada")||nom.includes("bowl")) cat="Ensaladas & Bowls";
+    else if(nom.includes("jugo")||nom.includes("bebida")||nom.includes("limonada")) cat="Bebidas";
+    else if(nom.includes("wrap")||nom.includes("sándwich")) cat="Wraps & Sándwiches";
+    else if(nom.includes("postre")||nom.includes("galleta")||nom.includes("brownie")) cat="Postres";
+    else if(nom.includes("proteína")||nom.includes("pollo")||nom.includes("atún")) cat="Proteínas";
+    cats[cat]=(cats[cat]||0)+parseFloat(d.subtotal||0);
+  });
+  const labels=Object.keys(cats), data=labels.map(k=>cats[k]);
+  const COLORS=["#00B4AA","#16A97A","#007A72","#D4A012","#6B87A8","#E05050","#4DD4AE"];
+  if(window._venCharts["donut"]) try{ window._venCharts["donut"].destroy(); }catch(e){}
+  window._venCharts["donut"]=new Chart(ctx2,{
+    type:"doughnut",
+    data:{labels,datasets:[{data,backgroundColor:COLORS.slice(0,labels.length),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"65%",
+      plugins:{legend:{position:"right",labels:{color:"#6B87A8",font:{family:"DM Sans",size:11},padding:12,boxWidth:12}},
+        tooltip:{callbacks:{label:c2=>" $"+parseFloat(c2.raw||0).toFixed(2)+" ("+(parseFloat(c2.raw||0)/data.reduce((a,b)=>a+b,0)*100).toFixed(1)+"%)"}}}
+    }
+  });
+}
+
+function venRenderFacturas(){
+  const tbodyF=document.getElementById("ven-tbody-facts");
+  if(!tbodyF) return;
+  // Últimas facturas: del día filtrado (ayer), sino del mes
+  const fuente=window._venVentas?.length ? window._venVentas : window._venVentasMes||[];
+  const ultimas=[...fuente].sort((a,b)=>(b.fecha_emision||"").localeCompare(a.fecha_emision||"")).slice(0,20);
+  if(!ultimas.length){ tbodyF.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--grisMed)">Sin facturas en el período</td></tr>'; return; }
+  tbodyF.innerHTML=ultimas.map(d=>`<tr>
+    <td style="font-family:monospace;font-size:11px">${esc(d.numero_doc||d.id_externo||"")}</td>
+    <td style="font-size:11px">${fmtFechaLabel(d.fecha_emision||"")}</td>
+    <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(d.cliente_nombre||"")}">${esc(d.cliente_nombre||"—")}</td>
+    <td class="ven-monto" style="text-align:right">$${parseFloat(d.total||0).toLocaleString("es-EC",{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+  </tr>`).join("");
+}
 
 </script></body></html>

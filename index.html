@@ -845,7 +845,7 @@
     <div class="sb-group" data-area="PanelSH" id="sb-panel-sh-wrap" style="display:none">
       <div class="sb-item" data-area="PanelSH" onclick="sbNav('PanelSH')" id="sb-panel-sh">
         <span class="sb-item-icon"><svg viewBox="0 0 24 24"><path d="M2 7l1.5-3h17L22 7"/><path d="M2 7v13a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V7"/><path d="M2 7h20"/><path d="M9 13h6v8H9z"/></svg></span>
-        <span class="sb-item-label">SUPERHEALTHY</span>
+        <span class="sb-item-label">PULSO DEL NEGOCIO</span>
       </div>
     </div>
 
@@ -2675,6 +2675,7 @@ function renderArea(area){
     })();
 
     // Bitácora — historial completo del período filtrado, ordenable por columna
+    const _bitSort    = window._ticBitSort || {col:'fecha_solicitud', dir:'desc'};
     const _bitPeriodo = mesF>0 ? (MESES_N[mesF]+' '+anioF) : ('año '+anioF);
     const _bitSortIcn = c => _bitSort.col===c ? (_bitSort.dir==='asc'?' ▲':' ▼') : ' ⇅';
     const _bitTh = (label, col) => '<th onclick="ticBitSort(\''+col+'\')" style="cursor:pointer;user-select:none" title="Click para ordenar">'+label+'<span style="font-size:9px;color:'+(_bitSort.col===col?'var(--azul)':'#9CA3AF')+'">'+_bitSortIcn(col)+'</span></th>';
@@ -13178,6 +13179,11 @@ function renderPanelSH(){
   const el = document.getElementById("panelsh-container");
   if(!el) return;
 
+  // ── Helper único: TODAS las sumas de ventas del Panel Ejecutivo van SIN IVA ──
+  // El campo `total` de Contifico incluye IVA (pasivo a pagar al SRI, no es ingreso real).
+  // Sumar subtotales hace que tarjetas/barras/pies cuadren con el Estado de Resultados.
+  const _venSubt = v => parseFloat(v.subtotal_0||0) + parseFloat(v.subtotal_12||0) + parseFloat(v.subtotal_15||0);
+
   const fmtM = v => "$"+Math.round(parseFloat(v||0)).toLocaleString("en-US");
   const fmtK = v => v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
   const fmtPct = v => (v>=0?"+":"")+v.toFixed(1)+"%";
@@ -13254,13 +13260,13 @@ function renderPanelSH(){
   const fechasOrd = [...new Set(ventasMes.map(v=>v.fecha_emision))].sort();
   const fUlt = fechasOrd[fechasOrd.length-1];
   const fPen = fechasOrd[fechasOrd.length-2];
-  const totUlt = ventasMes.filter(v=>v.fecha_emision===fUlt).reduce((s,v)=>s+parseFloat(v.total||0),0);
-  const totPen = fPen ? ventasMes.filter(v=>v.fecha_emision===fPen).reduce((s,v)=>s+parseFloat(v.total||0),0) : 0;
+  const totUlt = ventasMes.filter(v=>v.fecha_emision===fUlt).reduce((s,v)=>s+_venSubt(v),0);
+  const totPen = fPen ? ventasMes.filter(v=>v.fecha_emision===fPen).reduce((s,v)=>s+_venSubt(v),0) : 0;
   const varDia = totPen>0 ? ((totUlt-totPen)/totPen)*100 : 0;
   const colorVar = varDia>=0?"var(--verde)":"var(--rojo)";
 
-  // KPI 2 — Ticket Promedio del período filtrado
-  const totMes = ventasFiltered.reduce((s,v)=>s+parseFloat(v.total||0),0);
+  // KPI 2 — Ticket Promedio del período filtrado (usa _venSubt → sin IVA)
+  const totMes = ventasFiltered.reduce((s,v)=>s+_venSubt(v),0);
   const nFacMes = ventasFiltered.length;
   const ticket = nFacMes>0 ? totMes/nFacMes : 0;
 
@@ -13272,7 +13278,7 @@ function renderPanelSH(){
   const porLocal = {};
   ventasFiltered.forEach(v=>{
     const loc = (v.local||"Sin Local").trim()||"Sin Local";
-    porLocal[loc] = (porLocal[loc]||0)+parseFloat(v.total||0);
+    porLocal[loc] = (porLocal[loc]||0)+_venSubt(v);
   });
   const localesSorted = Object.entries(porLocal).sort((a,b)=>b[1]-a[1]);
   const topLocal = localesSorted[0] || ["—",0];
@@ -13314,8 +13320,8 @@ function renderPanelSH(){
   // Reflejar en la global para que otros consumidores (badge, label) lo vean
   window._venMeta = _meta_psh;
   const _ult7 = fechasOrd.slice(-7);
-  const _totDiario  = ventasFiltered.filter(v=>v.fecha_emision===fUlt).reduce((s,v)=>s+parseFloat(v.total||0),0);
-  const _totSemanal = ventasFiltered.filter(v=>_ult7.includes(v.fecha_emision)).reduce((s,v)=>s+parseFloat(v.total||0),0);
+  const _totDiario  = ventasFiltered.filter(v=>v.fecha_emision===fUlt).reduce((s,v)=>s+_venSubt(v),0);
+  const _totSemanal = ventasFiltered.filter(v=>_ult7.includes(v.fecha_emision)).reduce((s,v)=>s+_venSubt(v),0);
   const _totMensual = totMes;
   const _mD = parseFloat(_meta_psh.meta_diaria||0);
   const _mS = parseFloat(_meta_psh.meta_semanal||0);
@@ -13527,7 +13533,7 @@ function renderPanelSH(){
       const cod = v.establecimiento || '(sin sede)';
       if(!porSede[cod]) porSede[cod] = {codigo:cod, docs:0, total:0};
       porSede[cod].docs++;
-      porSede[cod].total += parseFloat(v.total||0);
+      porSede[cod].total += _venSubt(v);
     });
     const sedesArr = Object.values(porSede).sort((a,b)=>b.total-a.total);
 
@@ -13618,7 +13624,7 @@ function renderPanelSH(){
       const metaLbl = _fuente === 'presupuesto'
         ? `Presup. ${(MESES_PSH[window._venMeta._mes]||'').slice(0,3)}`
         : 'Meta';
-      return _buildSemCard("Ventas Mensual · Periodo Actual · "+mesUp, fechasOrd.length+" días con ventas", _totMensual, _mM, metaLbl, extra);
+      return _buildSemCard("Ventas Mensual · Periodo Actual · "+mesUp, fechasOrd.length+" días con ventas · sin IVA", _totMensual, _mM, metaLbl, extra);
     })()}
     <div class="ven-kpi-card" style="border-left-color:var(--azul)">
       <div class="ven-kpi-label">Ticket Promedio · ${periodoLbl}</div>
@@ -13990,19 +13996,27 @@ function initChartsPanelSH(ventas, locales){
   const fmtK = v => v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
 
   // ── Chart 1: Tendencia diaria ─────────────────────────────
+  // Suma SIN IVA para consistencia con el resto del Panel Ejecutivo
+  const _venSubt = v => parseFloat(v.subtotal_0||0) + parseFloat(v.subtotal_12||0) + parseFloat(v.subtotal_15||0);
+  const DOW_ABBR = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const porDia = {};
   ventas.forEach(v=>{
     const f = v.fecha_emision || "";
-    porDia[f] = (porDia[f]||0)+parseFloat(v.total||0);
+    porDia[f] = (porDia[f]||0)+_venSubt(v);
   });
   const fechasOrd = Object.keys(porDia).sort();
   const ult30 = fechasOrd.slice(-30);
+  // Etiqueta multilínea: ['Lun', '14/05'] → Chart.js la pinta en 2 renglones
+  const _lblTend = f => {
+    const dt = new Date(f+'T00:00:00');
+    return [DOW_ABBR[dt.getDay()], f.slice(8,10)+'/'+f.slice(5,7)];
+  };
   const cTend = document.getElementById("psh-chart-tendencia");
   if(cTend){
     window._venCharts["psh-chart-tendencia"] = new Chart(cTend, {
       type:"line",
       data:{
-        labels: ult30.map(f=>f.slice(5)), // MM-DD
+        labels: ult30.map(_lblTend),
         datasets:[{
           label:"Ventas diarias",
           data: ult30.map(f=>porDia[f]),
@@ -14014,7 +14028,13 @@ function initChartsPanelSH(ventas, locales){
       options:{
         responsive:true, maintainAspectRatio:false,
         plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:ctx=>" "+fmtM(ctx.raw)}}},
+          tooltip:{callbacks:{
+            title:items=>{
+              const lbl = items[0].label;
+              return Array.isArray(lbl) ? lbl.join(' ') : lbl;
+            },
+            label:ctx=>" "+fmtM(ctx.raw)
+          }}},
         scales:{
           x:{ticks:{color:"#6B87A8",font:{size:10}}},
           y:{ticks:{color:"#6B87A8",callback:v=>"$"+fmtK(v)}}
@@ -14094,10 +14114,15 @@ function initChartsPanelSH(ventas, locales){
   ((window._sbCache?.producto)||[])
     .filter(p => !idEmpProds || p.id_empresa===idEmpProds)
     .forEach(p => { prodMap[p.producto_id] = p.categoria || 'Sin categoría'; });
+  // OJO: en ven_detalle `subtotal` = cantidad × precio LISTA (bruto),
+  // y `descuento` es un PORCENTAJE (no monto). Para que el pie/bar cuadre
+  // con la tarjeta de Ventas Mensual hay que aplicar el descuento línea a línea.
+  // El campo `base_gravable` viene corrupto en ~25% de las filas (=0), no se usa.
+  const _venLineaNeta = d => parseFloat(d.subtotal||0) * (1 - parseFloat(d.descuento||0)/100);
   const porCat = {};
   detFil.forEach(d => {
     const c = prodMap[d.producto_id] || 'Sin categoría';
-    porCat[c] = (porCat[c]||0) + parseFloat(d.subtotal||0);
+    porCat[c] = (porCat[c]||0) + _venLineaNeta(d);
   });
   const catSorted = Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
   const totalCat  = catSorted.reduce((s,e)=>s+e[1],0);

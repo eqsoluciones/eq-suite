@@ -1859,8 +1859,18 @@ function inicializarFiltros(){
     aniosSet.map(a=>'<option value="'+a+'"'+(a===filtros.anio?" selected":"")+'>'+a+'</option>').join("");
 
   const MESES_N2=["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  // ── Un solo período presentado ──────────────────────────────────
+  // El MES del header NUNCA queda vacío (sin opción "Todos"): lo presentado
+  // en cada indicador/dashboard = este mes, y lo que se cierra/actúa también.
+  // Default: el último mes CERRADO del año/empresa actual (lo que el usuario
+  // suele presentar); si no hay ninguno cerrado, el mes calendario en curso.
+  if(!(filtros.mes>=1 && filtros.mes<=12)){
+    const empSel = (cache.empresas||[]).find(e=>e.codigo===filtros.empresa);
+    const cerrados = kpis.filter(k=>empSel && k.id_empresa===empSel.id && k.anio===filtros.anio && k.cerrado).map(k=>k.mes);
+    filtros.mes = cerrados.length ? Math.max(...cerrados) : (new Date().getMonth()+1);
+  }
   document.getElementById("f-mes").innerHTML =
-    MESES_N2.map((m,i)=>'<option value="'+i+'"'+(i===filtros.mes?" selected":"")+'>'+m+'</option>').join("");
+    MESES_N2.slice(1).map((m,i)=>'<option value="'+(i+1)+'"'+((i+1)===filtros.mes?" selected":"")+'>'+m+'</option>').join("");
 
   filtroPeriodo = {anio:filtros.anio, mes:filtros.mes};
 }
@@ -1877,7 +1887,7 @@ function onFiltroChange(){
       localStorage.setItem('eq_last_empresa_'+sesion.id, filtros.empresa);
     }
   } catch(e){ /* localStorage no disponible — ignorar */ }
-  filtros.mes     = parseInt(document.getElementById("f-mes").value) || 0;
+  filtros.mes     = parseInt(document.getElementById("f-mes").value) || (new Date().getMonth()+1);
   filtroPeriodo   = {anio:filtros.anio, mes:filtros.mes};
   // Si cambió la empresa, limpiar stores en cache (vienen de empresa previa)
   if(prevEmpresa !== filtros.empresa){
@@ -2251,18 +2261,12 @@ function renderContent(){
 // KPI QUERIES
 // ═══════════════════════════════════════════════════════════════
 function buildPeriodoUI(){
-  const cache2 = window._sbCache||{};
-  const aniosUI = [...new Set((cache2.kpi_mensual||[]).map(k=>parseInt(k.anio)).filter(a=>a>2000))].sort((a,b)=>b-a);
-  const anioSel = '<option value="0">Todos</option>'+aniosUI.map(a=>'<option value="'+a+'"'+(a===filtroPeriodo.anio?" selected":"")+'>'+a+'</option>').join("");
-  const mesSel  = MESES_N.map((m,i)=>'<option value="'+i+'"'+(i===filtroPeriodo.mes?" selected":"")+'>'+m+'</option>').join("");
+  // Filtro ÚNICO: el del encabezado. Aquí solo se muestra el período presentado
+  // (etiqueta de solo lectura), para no duplicar el control en cada vista.
   const pLabel  = filtroPeriodo.anio===0?"Todos":(filtroPeriodo.mes===0?"Año "+filtroPeriodo.anio:MESES_N[filtroPeriodo.mes]+" "+filtroPeriodo.anio);
   return '<div class="area-filtros">' +
-    '<span style="font-size:14px">🗓</span>' +
-    '<div class="area-filtro-group"><span class="area-filtro-lbl">Año:</span><select id="fp-anio" class="area-filtro-sel">'+anioSel+'</select></div>' +
-    '<div class="area-filtro-group"><span class="area-filtro-lbl">Mes:</span><select id="fp-mes" class="area-filtro-sel">'+mesSel+'</select></div>' +
-    '<button class="filtro-aplicar" onclick="aplicarFiltroPeriodo()">Aplicar</button>' +
     '<div class="filtro-periodo-badge">📍 '+pLabel+'</div>' +
-    '<span style="font-size:11px;color:var(--grisMed);margin-left:auto">Los filtros del header también aplican globalmente</span>' +
+    '<span style="font-size:11px;color:var(--grisMed);margin-left:auto">Cambia el período en el filtro del encabezado ↗</span>' +
     '</div>';
 }
 

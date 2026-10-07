@@ -1852,6 +1852,20 @@ function inicializarFiltros(){
     selEmp.disabled=false;
   }
 
+  // ── Reconciliar filtros.empresa con lo realmente disponible ──────
+  // Corre DESPUÉS de que el cache (usuario_acceso) ya cargó, así que cierra la
+  // carrera del login (empresa resuelta antes de terminar la carga) y cualquier
+  // permiso recién otorgado (tras re-login): si la empresa actual no está entre
+  // las opciones del selector, se usa la primera disponible. Sin opciones reales
+  // (p.ej. gestor sin permisos) se deja como está ("Sin empresas asignadas").
+  {
+    const _opts = [...selEmp.options].map(o=>o.value).filter(v=>v);
+    if(_opts.length && !_opts.includes(filtros.empresa)){
+      filtros.empresa = _opts[0];
+    }
+    if(filtros.empresa && _opts.includes(filtros.empresa)) selEmp.value = filtros.empresa;
+  }
+
   // Años disponibles desde el cache de kpi_mensual (deduplicar como entero)
   const aniosSet = [...new Set(kpis.map(k=>parseInt(k.anio)).filter(a=>a>2000))].sort((a,b)=>b-a);
   document.getElementById("f-anio").innerHTML =
@@ -15074,7 +15088,9 @@ function areaHabilitada(area, idEmpresaParam){
     const empCur = (cache.empresas||[]).find(e=>e.codigo===filtros?.empresa);
     idEmp = empCur?.id || sesion?.id_empresa;
   }
-  if(!idEmp) return true;
+  // Sin empresa resuelta: compat para roles legacy, pero un gestor_kpi sin empresa
+  // NO debe ver todas las áreas (evita el "veo todas las pestañas pero sin datos").
+  if(!idEmp) return sesion?.rol !== 'gestor_kpi';
   // Primero: usuario_acceso (nuevo modelo multi-empresa × multi-área)
   const accesosUsuario = (cache.usuario_acceso||[]).filter(a => a.id_usuario === sesion?.id);
   if(accesosUsuario.length){

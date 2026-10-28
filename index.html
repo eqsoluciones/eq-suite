@@ -2210,8 +2210,9 @@ function renderContent(){
     window._venVentasMes_periodo = _periodoKey;
 
     // ── Verificar si la empresa tiene API Contifico activa
+    // En modo demo mostramos la data histórica (congelada) aunque el sync esté apagado.
     const _apiCfg = (window._sbCache?.empresa_api_config||[])
-      .find(r => r.id_empresa === _empActivaPSH?.id && r.activo);
+      .find(r => r.id_empresa === _empActivaPSH?.id && (r.activo || _empActivaPSH?.modo_demo));
 
     el.innerHTML = "<div id='panelsh-container'><div style='padding:48px;text-align:center'><div style='font-weight:700;color:var(--azul);font-size:15px;font-family:Raleway,sans-serif'>Cargando Panel Ejecutivo " + esc(_empNomPSH) + "...</div><div style='font-size:12px;color:var(--grisMed);margin-top:8px'>Consultando datos del mes</div></div></div>";
 
@@ -17322,9 +17323,9 @@ function renderPanelSH(){
     : (window._sbCache?.empresas||[]).find(e=>e.codigo===filtros.empresa);
   const empNomPSH = empActivaPSH?.nombre || filtros.empresa || 'Empresa';
 
-  // ¿Tiene API Contifico activa?
+  // ¿Tiene API Contifico activa? (en modo demo mostramos la data histórica congelada)
   const apiCfg = (window._sbCache?.empresa_api_config||[])
-    .find(r => r.id_empresa === empActivaPSH?.id && r.activo);
+    .find(r => r.id_empresa === empActivaPSH?.id && (r.activo || empActivaPSH?.modo_demo));
 
   // Selector año/mes (reutilizable)
   const periodoUI = (typeof buildPeriodoUI === "function") ? buildPeriodoUI() : "";

@@ -1182,7 +1182,17 @@ async function cargarDBResto(){
       q("eq_resultado_mensual", {select:"*", limit:5000}),
       q("eq_tienda_map", {select:"*", limit:1000}),
       q("eq_cartera_periodo", {select:"*", limit:5000, order:"fecha_corte.desc"}),
-      qp("eq_cartera_contraparte", "select=*&order=fecha_corte.desc"),
+      // Solo el ÚLTIMO corte (~200 filas) en vez de TODO el histórico (27k+ filas →
+      // ~28 viajes paginados que disparaban el login a ~10s). El único consumidor
+      // (_topContrasHTML · Panel Ejecutivo) filtra por el corte más reciente.
+      (async () => {
+        try {
+          const u = await sbQuery("eq_cartera_contraparte", {select:"fecha_corte", order:"fecha_corte.desc", limit:1});
+          const fc = u && u[0] && u[0].fecha_corte;
+          if(!fc) return [];
+          return await sbQueryPaginated("eq_cartera_contraparte", "select=*&fecha_corte=eq."+fc+"&order=total.desc");
+        } catch(e){ console.warn("cache eq_cartera_contraparte:", e.message); return []; }
+      })(),
       q("rrhh_grupo", {select:"*", order:"id_empresa.asc,orden.asc"}),
       q("empresa_sedes", {select:"*"}),
       q("empresa_areas", {select:"*"}),
@@ -1698,7 +1708,7 @@ async function doLogin(){
 
   const emp = (cache.empresas||[]).find(e=>e.id===u.id_empresa);
   sesion = {email:u.email, nombre:u.nombre, rol:u.rol, id_empresa:u.id_empresa, id:u.id, empresa_codigo:emp?.codigo||""};
-  const defaultEmp = (cache.empresas||[]).find(e=>e.codigo!=="EQSOLUTIONS" && (e.activo===true||e.activo===1));
+  const defaultEmp = (cache.empresas||[]).find(e=>e.codigo!=="EQSOLUTIONS" && (e.activo===true||e.activo===1) && !e.modo_demo);
   // Lista de empresas a las que tiene acceso por `usuario_acceso` (vacío = sin config)
   const accesosUserLogin = (cache.usuario_acceso||[]).filter(a => a.id_usuario === u.id);
   const empresasOkLogin  = ['eq_admin','eq_lider'].includes(u.rol)
@@ -1813,7 +1823,9 @@ document.addEventListener("keydown", e=>{
 // ═══════════════════════════════════════════════════════════════
 function inicializarFiltros(){
   const cache = window._sbCache || {};
-  const emps  = (cache.empresas||[]).filter(e=>e.codigo!=="EQSOLUTIONS" && (e.activo===true||e.activo===1));
+  // modo_demo: empresa desconectada que se conserva como DEMO → solo visible para eq_admin.
+  const _esAdminSel = sesion?.rol === 'eq_admin';
+  const emps  = (cache.empresas||[]).filter(e=>e.codigo!=="EQSOLUTIONS" && (e.activo===true||e.activo===1) && (_esAdminSel || !e.modo_demo));
   const kpis  = cache.kpi_mensual || [];
 
   const selEmp = document.getElementById("f-empresa");
@@ -1848,7 +1860,7 @@ function inicializarFiltros(){
       selEmp.disabled=true;
     }
   } else {
-    selEmp.innerHTML = emps.map(e=>'<option value="'+esc(e.codigo)+'"'+(e.codigo===filtros.empresa?" selected":"")+'>'+esc(e.nombre)+'</option>').join("");
+    selEmp.innerHTML = emps.map(e=>'<option value="'+esc(e.codigo)+'"'+(e.codigo===filtros.empresa?" selected":"")+'>'+esc(e.nombre)+(e.modo_demo?' · DEMO':'')+'</option>').join("");
     selEmp.disabled=false;
   }
 
@@ -12466,7 +12478,7 @@ window.guardarPermisoArea = guardarPermisoArea;
 // ── Tab: INTEGRACIONES APIs ────────────────────────────────────
 function renderAdminAPIs(empsCache, apiCfg){
   let html = '<div style="font-weight:700;color:var(--azul);font-size:14px;font-family:Raleway,sans-serif;margin-bottom:6px">Integraciones API por Empresa</div>';
-  html += '<div style="font-size:12px;color:var(--grisMed);margin-bottom:14px">Configura las credenciales del ERP (Contifico, etc.) para cada empresa. La sincronización de ventas solo funciona si hay una integración activa.</div>';
+  html += '<div style="font-size:12px;color:var(--grisMed);margin-bottom:14px">Configura las credenciales del ERP (Contifico, etc.) para cada empresa. La sincronización de ventas solo funciona si hay una integración activa.<br><b>🔌 Desconectar (demo)</b>: apaga el sync y oculta la empresa para no-admins, pero la deja disponible para ti como <b>DEMO</b> (la data histórica se conserva). Reversible con <b>🔗 Reconectar</b>.</div>';
   html += '<div class="card gap-16"><div style="overflow-x:auto"><table class="tabla-detalle"><thead><tr><th>Empresa</th><th>Tipo ERP</th><th>Proxy URL</th><th>API Key</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
   empsCache.forEach(e=>{
     const cfg = apiCfg.find(c=>c.id_empresa===e.id);
@@ -12475,15 +12487,22 @@ function renderAdminAPIs(empsCache, apiCfg){
       ? '<span style="font-family:monospace;font-size:10px;color:var(--grisMed)" title="'+esc(cfg.proxy_url)+'">'+esc(cfg.proxy_url.slice(0,40))+(cfg.proxy_url.length>40?"...":"")+'</span>'
       : '<span style="color:var(--grisMed);font-size:11px">—</span>';
     const apikey = cfg ? (cfg.api_key ? '<span class="estado-badge estado-ok">✓ Configurada</span>' : '<span class="estado-badge" style="background:rgba(245,158,11,.15);color:#92400E">Via proxy</span>') : '<span style="color:var(--grisMed);font-size:11px">—</span>';
-    const estado = cfg
+    const demoBadge = e.modo_demo ? ' <span class="estado-badge" style="background:rgba(212,160,18,.18);color:#92400E" title="Desconectada · visible solo para admin como demo (data intacta)">🟡 DEMO</span>' : '';
+    const estado = (cfg
       ? '<span class="estado-badge '+(cfg.activo?"estado-ok":"estado-bad")+'">'+(cfg.activo?"Activa":"Inactiva")+'</span>'
-      : '<span class="estado-badge" style="background:rgba(156,163,175,.2);color:#4B5563">Sin configurar</span>';
+      : '<span class="estado-badge" style="background:rgba(156,163,175,.2);color:#4B5563">Sin configurar</span>') + demoBadge;
+    let acc = '<button class="action-btn" data-eid="'+e.id+'" data-codigo="'+esc(e.codigo)+'" onclick="modalConfigApiEmpresa(parseInt(this.dataset.eid),this.dataset.codigo)">🔌 '+(cfg?"Editar":"Configurar")+'</button>';
+    if(cfg || e.modo_demo){
+      acc += e.modo_demo
+        ? ' <button class="action-btn" style="border-color:var(--tq);color:var(--tq)" data-eid="'+e.id+'" onclick="apiToggleDemo(parseInt(this.dataset.eid),false)" title="Reactivar el sync y volver visible como cliente">🔗 Reconectar</button>'
+        : ' <button class="action-btn" style="border-color:#D4A012;color:#92400E" data-eid="'+e.id+'" onclick="apiToggleDemo(parseInt(this.dataset.eid),true)" title="Apagar el sync + dejar como DEMO (solo admin). Conserva la data.">🔌 Desconectar (demo)</button>';
+    }
     html += '<tr><td style="font-weight:600">'+esc(e.nombre)+'</td>' +
       '<td>'+tipo+'</td>' +
       '<td>'+proxy+'</td>' +
       '<td>'+apikey+'</td>' +
       '<td>'+estado+'</td>' +
-      '<td><button class="action-btn" data-eid="'+e.id+'" data-codigo="'+esc(e.codigo)+'" onclick="modalConfigApiEmpresa(parseInt(this.dataset.eid),this.dataset.codigo)">🔌 '+(cfg?"Editar":"Configurar")+'</button></td></tr>';
+      '<td style="white-space:nowrap">'+acc+'</td></tr>';
   });
   if(!empsCache.length){
     html += '<tr><td colspan="6" style="text-align:center;color:var(--grisMed);padding:16px">Sin empresas registradas</td></tr>';
@@ -13099,6 +13118,54 @@ async function eliminarConfigApi(cfgId, empNombre){
 window.modalConfigApiEmpresa = modalConfigApiEmpresa;
 window.guardarConfigApiEmpresa = guardarConfigApiEmpresa;
 window.eliminarConfigApi = eliminarConfigApi;
+
+// ── Switch único: Desconectar (modo demo) / Reconectar una integración ──
+// Apaga el sync (empresa_api_config.activo=false) + marca empresas.modo_demo.
+// NO borra data. En demo la empresa queda visible SOLO para eq_admin.
+function apiToggleDemo(empId, aDemo){
+  const emp = (window._sbCache?.empresas||[]).find(e=>e.id===empId);
+  if(!emp){ showError("Empresa no encontrada"); return; }
+  if(aDemo){
+    openModal('<div class="modal-box"><button class="modal-close" onclick="closeModal()">✕</button>'+
+      '<div class="modal-title" style="color:#92400E">🔌 Desconectar '+esc(emp.nombre)+' (modo demo)</div>'+
+      '<div class="modal-sub" style="margin-bottom:12px">Se desconecta como cliente pero <b>se conserva como DEMO</b>.</div>'+
+      '<div style="font-size:12px;color:var(--azul);line-height:1.7;background:#F8FAFC;border:1px solid var(--borde);border-radius:8px;padding:12px 14px;margin-bottom:12px">'+
+        '✔ Se <b>apaga el sync</b> de ventas/cartera (deja de llamar a la API).<br>'+
+        '✔ Se <b>oculta del selector</b> para todos menos para ti (admin) — con etiqueta <b>DEMO</b>.<br>'+
+        '✔ <b>La data histórica se conserva</b> intacta (nada se borra).<br>'+
+        '↩ Reversible cuando quieras con <b>Reconectar</b>.'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--grisMed);line-height:1.6;margin-bottom:16px">🔐 <b>Credenciales:</b> para revocarlas del todo, borra además la edge function proxy y sus Secrets por CLI. El modo demo solo deja de <i>usarlas</i>.</div>'+
+      '<div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancelar</button>'+
+      '<button class="btn-save" style="background:#D4A012" onclick="_apiToggleDemoGo('+empId+',true)">🔌 Desconectar (demo)</button></div></div>');
+  } else {
+    openModal('<div class="modal-box"><button class="modal-close" onclick="closeModal()">✕</button>'+
+      '<div class="modal-title">🔗 Reconectar '+esc(emp.nombre)+'</div>'+
+      '<div class="modal-sub" style="margin-bottom:14px">Se reactiva el <b>sync</b> y la empresa vuelve a ser <b>visible como cliente</b> para todos los usuarios con acceso.</div>'+
+      '<div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancelar</button>'+
+      '<button class="btn-save" onclick="_apiToggleDemoGo('+empId+',false)">🔗 Reconectar</button></div></div>');
+  }
+}
+window.apiToggleDemo = apiToggleDemo;
+
+async function _apiToggleDemoGo(empId, aDemo){
+  closeModal();
+  try{
+    const cache = window._sbCache||{};
+    const emp = (cache.empresas||[]).find(e=>e.id===empId);
+    const nom = emp?.nombre || ('empresa '+empId);
+    await supaPatch("empresas", "id=eq."+empId, {modo_demo:aDemo});
+    const cfg = (cache.empresa_api_config||[]).find(c=>c.id_empresa===empId);
+    if(cfg) await supaPatch("empresa_api_config", "id_empresa=eq."+empId, {activo:!aDemo, actualizado_en:new Date().toISOString()});
+    try{ await supaPost("log_accesos", {email:sesion?.email||"admin", accion:"integracion_demo", detalle:(aDemo?"Desconectó (demo)":"Reconectó")+": "+nom}); }catch(_){}
+    // Refrescar cache en memoria (sin re-traer secretos del proxy)
+    if(emp) emp.modo_demo = aDemo;
+    if(cfg) cfg.activo = !aDemo;
+    showSuccess(aDemo ? "🔌 "+nom+" desconectada · en modo DEMO (data intacta)" : "🔗 "+nom+" reconectada");
+    renderContent();
+  }catch(e){ console.error("[apiToggleDemo]", e); showError("No se pudo cambiar el estado: "+(e?.message||e)); }
+}
+window._apiToggleDemoGo = _apiToggleDemoGo;
 
 // ── Modal: Editar Meta de Ventas para una empresa específica ───
 function modalEditarMeta(empId, empCodigo){
